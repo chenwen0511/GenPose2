@@ -9,3 +9,6 @@ ipdb
 matplotlib
 tqdm
 scikit-learn
+
+# yolo seg
+pip install "ultralytics>=8.2.0,<8.5.0"
