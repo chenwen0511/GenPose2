@@ -90,6 +90,29 @@ img = visualize_pose(data, pose, length, visualize_image=False)
 
 **GenPose2 的 `InferDataset` 只读同前缀的 `mask.exr`。** Mask 中像素值为 **物体 id**：单物体为 `1`；多实例为 `1,2,3,...`（`255` 会被忽略）。
 
+### 3.1 `mask.exr` 可视化（`utils/exr_visualize.py`）
+
+EXR 里是实例 id，肉眼不易分辨。可用仓库脚本按 id 着色，并可选叠加到 RGB 上检查分割是否与图像对齐。
+
+**依赖**：已安装 `cutoop`（推荐，与 `Dataset.load_mask` 一致）或 OpenCV 开启 EXR（`OPENCV_IO_ENABLE_OPENEXR=1`，脚本内已默认设置）。
+
+在仓库根目录执行：
+
+```bash
+python utils/exr_visualize.py learning/inputs/1_mask.exr \
+  --rgb learning/inputs/1_.png \
+  -o learning/outputs/1_mask_vis.png
+```
+
+- 第一个参数：任意 `mask.exr`（YOLO 输出如 `learning/inputs/1_mask.exr`、`output/smt_infer/mask/1__mask.exr`、HTTP 结果目录下 `sam6d_results/mask.exr` 均可）。
+- `--rgb`：可选；提供则半透明叠在彩色图上，尺寸不一致时会按 mask 缩放到同分辨率。
+- `-o` / `--output`：保存 PNG；与 `--show` 至少指定其一。
+- `--show`：弹窗查看（不写 `-o` 时须加此项）。
+- `--alpha`：叠加透明度，默认 `0.55`。
+- `--no-legend`：不画左上角实例 id 图例。
+
+终端会打印当前 mask 中的实例 id 列表（如 `[1]`）；单目标场景应只有 **id=1**，若出现 `0` 与多个 id 可对照第 7 节排查。
+
 ---
 
 ## 4. 两条运行入口（仓库已有）
@@ -144,7 +167,8 @@ img = visualize_pose(data, pose, length, visualize_image=False)
 
 - **调用顺序**：准备 `color.png` + `depth.exr` + `mask.exr` + `meta.json` → `InferDataset.alternetive_init` → `create_genpose2(...).inference` → `visualize_pose`。  
 - **`learning/inputs/camera.json`** 不能直接替代 **`meta.json`**，需按第 2 节展开为 `camera.intrinsics`。  
-- **`segment/`**：`run_yolo_segmentation` 写出 **`mask.exr`**；需与 RGB/深度同目录同前缀，并保证对齐。
+- **`segment/`**：`run_yolo_segmentation` 写出 **`mask.exr`**；需与 RGB/深度同目录同前缀，并保证对齐。  
+- **检查 mask**：`python utils/exr_visualize.py ... --rgb ... -o ...`（见第 3.1 节）。
 
 把上述四件套凑齐并确认深度单位与内参分辨率一致后，即可用 `runners/infer.py` 做离线推理。
 
