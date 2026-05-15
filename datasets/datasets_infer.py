@@ -145,7 +145,8 @@ class InferDataset(object):
 
     def get_objects(self):
         obj_idx = np.unique(self._mask)
-        obj_idx = obj_idx[obj_idx != 255]
+        # 0=背景，255=忽略；与 datasets_infer_camera.get_objects 一致，不把背景当实例
+        obj_idx = obj_idx[(obj_idx != 0) & (obj_idx != 255)]
         objects = {}
         for idx in obj_idx:
             obj = self.get_per_object(idx)

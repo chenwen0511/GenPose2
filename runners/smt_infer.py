@@ -23,8 +23,9 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import cv2
 import numpy as np
@@ -98,6 +99,24 @@ def _ensure_hw_match(color: np.ndarray, depth: np.ndarray, mask: np.ndarray) -> 
         )
 
 
+def _print_timing_report(timings: Dict[str, float], total_s: float) -> None:
+    labels = {
+        "yolo_mask": "1. YOLO 分割 (mask.exr)",
+        "genpose_load": "2. GenPose 模型加载",
+        "genpose_infer": "3. GenPose 模型推理",
+        "visualize": "4. 可视化",
+    }
+    print("[smt_infer] ---------- 耗时 (wall time) ----------")
+    for key in ("yolo_mask", "genpose_load", "genpose_infer", "visualize"):
+        if key not in timings:
+            continue
+        sec = timings[key]
+        pct = (sec / total_s * 100.0) if total_s > 0 else 0.0
+        print(f"[smt_infer]   {labels[key]:28s} {sec:8.3f} s  ({pct:5.1f}%)")
+    print(f"[smt_infer]   {'合计':28s} {total_s:8.3f} s")
+    print("[smt_infer] ------------------------------------")
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="单张图：YOLO 分割 + GenPose2 推理")
     p.add_argument("--rgb", type=Path, required=True, help="RGB 图路径（任意 png/jpg，或 *color.png）")
@@ -141,6 +160,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    t_pipeline = time.perf_counter()
+    timings: Dict[str, float] = {}
+
     rgb_path = Path(args.rgb).resolve()
     depth_path = Path(args.depth).resolve()
     meta_path = Path(args.meta).resolve()
@@ -156,6 +178,7 @@ def main() -> int:
     else:
         mask_exr_path = mask_dir / f"{rgb_path.stem}_mask.exr"
 
+    t0 = time.perf_counter()
     if not args.skip_yolo:
         class_id = None if args.yolo_class_id < 0 else args.yolo_class_id
         run_yolo_segmentation(
@@ -171,6 +194,7 @@ def main() -> int:
     elif not mask_exr_path.is_file():
         print("已指定 --skip-yolo 但找不到 mask.exr:", mask_exr_path, file=sys.stderr)
         return 1
+    timings["yolo_mask"] = time.perf_counter() - t0
 
     meta = _load_meta_dict(meta_path)
     color = _load_color_any(rgb_path)
@@ -181,11 +205,15 @@ def main() -> int:
     _argv_user = sys.argv[:]
     sys.argv = [sys.argv[0]]
     try:
+        t0 = time.perf_counter()
         genpose = create_genpose2(
             score_model_path=str(Path(args.score_ckpt).resolve()),
             energy_model_path=str(Path(args.energy_ckpt).resolve()),
             scale_model_path=str(Path(args.scale_ckpt).resolve()),
         )
+        timings["genpose_load"] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
         data = InferDataset(
             {"depth": depth, "color": color, "mask": mask, "meta": meta},
             img_size=genpose.cfg.img_size,
@@ -193,16 +221,24 @@ def main() -> int:
             n_pts=genpose.cfg.num_points,
         )
         pose, length = genpose.inference(data, prev_pose=None, tracking=False, tracking_T0=0.15)
+        timings["genpose_infer"] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
         vis_bgr = visualize_pose(data, pose, length, visualize_pts=False, visualize_image=False)
+        if args.save_vis:
+            out = Path(args.save_vis)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(out), vis_bgr)
+        timings["visualize"] = time.perf_counter() - t0
     finally:
         sys.argv = _argv_user
 
+    total_s = time.perf_counter() - t_pipeline
+    _print_timing_report(timings, total_s)
+
     print("推理完成。物体数:", int(pose[0].shape[0]) if pose and len(pose) > 0 else 0)
     if args.save_vis:
-        out = Path(args.save_vis)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        cv2.imwrite(str(out), vis_bgr)
-        print("可视化已保存:", out.resolve())
+        print("可视化已保存:", Path(args.save_vis).resolve())
     return 0
 
 
