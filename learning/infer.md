@@ -94,8 +94,10 @@ img = visualize_pose(data, pose, length, visualize_image=False)
 
 ## 4. 两条运行入口（仓库已有）
 
-| 脚本 | 数据从哪来 | 说明 |
-|------|------------|------|
+| 脚本 / 服务 | 数据从哪来 | 说明 |
+|-------------|------------|------|
+| `python http_server.py` | HTTP 上传 `rgb` / `depth` / `camera` | 见第 9 节；返回格式与 warmup `/infer` 一致 |
+| `python runners/smt_infer.py` | 命令行指定 rgb、depth、meta + YOLO | 单张一键；见第 7 节 |
 | `python runners/infer.py` | 磁盘：`DATA_PATH/*_color.png` + 同前缀 `depth.exr` / `mask.exr` / `meta.json` | 纯文件；`InferDataset` 来自 `datasets_infer.py` |
 | `python runners/infer_camera.py` | `USE_CAM=True`：RealSense + SAM2 点选 mask；`USE_CAM=False`：与上表相同的文件序列 | 依赖 `pyrealsense2`、相机序列号、`segment-anything-2-real-time` 等（见该文件顶部参数） |
 
@@ -179,4 +181,120 @@ Downloading: "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_
 ```
 
 下载完成后会缓存在上述目录；**离线或内网环境**需事先把同名文件放到该路径，或设置可写的 `TORCH_HOME` / 使用已缓存的机器拷贝整个 `checkpoints` 目录，避免运行时访问外网。
+
+---
+
+## 9. HTTP 服务：`http_server.py`（已打通）
+
+与 `warmup_http_service.py` 的 **`POST /infer`** 接口一致：三个 multipart 字段名固定为 **`rgb`**、**`depth`**、**`camera`**（不可改名）。服务内部完成 **YOLO 分割 → GenPose2 推理 → 可视化**，返回 JSON 字段与 warmup **同结构**（`score`、`xyz_mm`、`rotation_euler_zyx_rad`、`timing` 等）。
+
+### 9.1 依赖与启动
+
+```bash
+pip install -r requirements_http.txt   # fastapi、uvicorn、python-multipart
+
+# 在仓库根目录；YOLO 默认 segment/yolo_seg.pt，可用 GENPOSE2_YOLO_WEIGHTS 覆盖
+python http_server.py --host 0.0.0.0 --port 8002
+```
+
+启动成功时终端应出现：`GenPose2 models loaded`、`Application startup complete`。GenPose2 三个 ckpt 默认：
+
+- `results/ckpts/ScoreNet/scorenet.pth`
+- `results/ckpts/EnergyNet/energynet.pth`
+- `results/ckpts/ScaleNet/scalenet.pth`
+
+健康检查：
+
+```bash
+curl -s http://127.0.0.1:8002/health | python -m json.tool
+```
+
+### 9.2 curl 调用（`learning/inputs` 样例）
+
+当前样例目录下可用：
+
+| 上传字段 | 本地文件 | 说明 |
+|----------|----------|------|
+| `rgb` | `learning/inputs/1_.png` | 彩色图 |
+| `depth` | `learning/inputs/1_depth.png` | 深度 PNG（uint16 毫米时服务内会 ×0.001 转米） |
+| `camera` | `learning/inputs/1_meta.json` | 含 `camera.intrinsics`；**不要**用不存在的 `camera.json |
+
+```bash
+cd ~/stephen/01-code/GenPose2
+
+curl -X POST "http://127.0.0.1:8002/infer" \
+  -F "rgb=@learning/inputs/1_.png" \
+  -F "depth=@learning/inputs/1_depth.png" \
+  -F "camera=@learning/inputs/1_meta.json" \
+  --max-time 600 \
+  | python -m json.tool
+```
+
+说明：
+
+- 推理约 **0.3～数秒**（模型已在启动时加载）；`curl` 加 `--max-time 600` 避免误以为“没动静”。
+- 若 `camera=@.../camera.json` 文件不存在，curl 会失败或返回空 body。
+- warmup 风格也可用 `camera.json`（`cam_K` + `depth_scale`），服务会自动转成 `meta`。
+
+### 9.3 实测返回示例（2026-05-15，`1_meta.json`）
+
+以下为一次成功调用的响应（格式化后；与终端单行 JSON 等价）：
+
+```json
+{
+  "score": 0.9492788314819336,
+  "xyz_mm": [96.53440117835999, -95.19156068563461, 382.54737854003906],
+  "rotation_euler_zyx_rad": [-0.617199017096293, 0.009848582579731096, 3.1180013325040634],
+  "rotation_order": "zyx",
+  "pose_convention": "xyz is camera-frame translation in mm; rx, ry, rz are ZYX Euler angles in radians.",
+  "xyzrxryrz": [
+    96.53440117835999, -95.19156068563461, 382.54737854003906,
+    -0.617199017096293, 0.009848582579731096, 3.1180013325040634
+  ],
+  "xyzrxryrz_unit": "mm_rad",
+  "result_dir": "/home/ubuntu/stephen/01-code/GenPose2/service_outputs/20260515_155706_98978fb9",
+  "detection_ism_path": ".../sam6d_results/detection_ism.json",
+  "detection_pem_path": ".../sam6d_results/detection_pem.json",
+  "vis_ism_path": ".../sam6d_results/vis_ism.png",
+  "vis_pem_path": ".../sam6d_results/vis_pem.png",
+  "all_detections": ".../sam6d_results/detection_pem.json",
+  "timing": {
+    "ism_s": null,
+    "yolo_s": 0.016519666998647153,
+    "templates_s": 0.0,
+    "pose_s": 0.2689941660501063,
+    "pipeline_s": 0.28551383304875344,
+    "upload_s": 0.0003399129491299391,
+    "total_s": 0.2858537459978834
+  }
+}
+```
+
+字段含义（与 warmup 对齐）：
+
+| 字段 | 含义 |
+|------|------|
+| `score` | YOLO 分割置信度（最高分实例） |
+| `xyz_mm` | 相机坐标系平移，**毫米** |
+| `rotation_euler_zyx_rad` | ZYX 欧拉角 `[rx, ry, rz]`，**弧度** |
+| `xyzrxryrz` | 上两项拼接，单位 `mm_rad` |
+| `result_dir` | 本次请求输出目录（含中间结果） |
+| `vis_pem_path` | 位姿可视化图（叠加坐标轴/包围盒） |
+| `timing.yolo_s` | YOLO 分割耗时 |
+| `timing.pose_s` | GenPose2 推理 + 可视化耗时 |
+| `timing.total_s` | 含上传在内的总墙钟时间 |
+
+可视化图路径示例：
+
+`service_outputs/20260515_155706_98978fb9/sam6d_results/vis_pem.png`
+
+### 9.4 与命令行推理的关系
+
+| 方式 | 入口 | 适用 |
+|------|------|------|
+| HTTP | `http_server.py` + `curl` | 上位机/产线通过 multipart 上传 RGB-D + 相机 JSON |
+| 命令行单张 | `runners/smt_infer.py` | 本地调试、批处理脚本 |
+| 命令行序列 | `runners/infer.py` | 已有完整 `*_color.png` 四件套目录 |
+
+HTTP 路径**不要求**事先准备好 `mask.exr`（服务内 YOLO 自动生成）；命令行 `smt_infer` 同理。
 

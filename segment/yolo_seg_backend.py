@@ -22,6 +22,7 @@ class YoloSegmentationResult:
     """YOLO 分割输出：GenPose2 / cutoop 可读的单通道 mask.exr。"""
 
     mask_exr: Path
+    score: float = 1.0
 
 
 def _load_model(weights_path: Path) -> YOLO:
@@ -156,6 +157,14 @@ def run_yolo_segmentation(
     classes = result.boxes.cls.detach().cpu().numpy().astype(int)
     masks = result.masks.data.detach().cpu().numpy()
 
+    candidate_indexes = list(range(len(scores)))
+    if class_id is not None:
+        candidate_indexes = [idx for idx in candidate_indexes if classes[idx] == class_id]
+    if not candidate_indexes:
+        raise RuntimeError(f"YOLO returned no masks for class_id={class_id}")
+    best_idx = max(candidate_indexes, key=lambda idx: float(scores[idx]))
+    best_score = float(scores[best_idx])
+
     instance_u8 = build_instance_mask_from_yolo(
         masks, boxes, scores, classes, image_size, class_id=class_id, max_instances=max_instances
     )
@@ -170,7 +179,7 @@ def run_yolo_segmentation(
     save_genpose2_mask_exr(instance_u8, mask_exr_path)
     print(f"[yolo_seg_backend] mask.exr -> {mask_exr_path} (instances max={int(instance_u8.max())})")
 
-    return YoloSegmentationResult(mask_exr=mask_exr_path)
+    return YoloSegmentationResult(mask_exr=mask_exr_path, score=best_score)
 
 
 def preload_yolo_model(
