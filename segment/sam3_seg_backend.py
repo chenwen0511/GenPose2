@@ -60,7 +60,7 @@ def _cocomask():
 DEFAULT_SAM3_ROOT = "/home/ubuntu/stephen/01-code/sam3"
 DEFAULT_SAM3_PYTHON = "/home/ubuntu/miniconda3/envs/sam3/bin/python"
 DEFAULT_SAM3_INFER_SCRIPT = "/home/ubuntu/stephen/01-code/sam3/scripts/infer.py"
-DEFAULT_SAM3_PROMPT = "white plate"
+DEFAULT_SAM3_PROMPT = "white plastic tray"
 DEFAULT_SAM3_THRESHOLD = 0.41
 DEFAULT_SAM3_MASK_THRESHOLD = 0.50
 DEFAULT_SAM3_CHECKPOINT = "/home/ubuntu/stephen/02-weight/sam3/sam3.pt"
@@ -84,6 +84,20 @@ class Sam3SegmentationResult:
     num_instances: int = 1
     instance_scores: Optional[List[float]] = None
     instance_dets: Optional[List[Dict[str, Any]]] = None
+    vis_ism_path: Optional[Path] = None
+
+
+# 与 sam3/scripts/infer.py VIS_COLORS 一致（OpenCV BGR）
+_VIS_COLORS_BGR: Tuple[Tuple[int, int, int], ...] = (
+    (0, 255, 0),
+    (0, 128, 255),
+    (255, 128, 0),
+    (255, 0, 255),
+    (0, 255, 255),
+    (128, 255, 128),
+    (64, 64, 255),
+    (255, 64, 64),
+)
 
 
 def _mask_to_rle(binary_mask: np.ndarray) -> Dict[str, object]:
@@ -354,6 +368,96 @@ def write_genpose_mask_exr_from_ism(
     return best_score, num_instances, instance_scores, instance_dets
 
 
+def visualize_sam3_ism(
+    rgb_path: Path,
+    instance_dets: List[Dict[str, Any]],
+    output_path: Path,
+    *,
+    prompt: Optional[str] = None,
+    mask_alpha: float = 0.5,
+    instance_ids: Optional[List[int]] = None,
+) -> Path:
+    """
+    在 RGB 上绘制 SAM3 多实例 mask、bbox 与 score，写入 ``vis_ism.png`` 等路径。
+
+    ``instance_ids`` 与 ``mask.exr`` 中 id 一致时（默认 1..N），图例显示 ``id=#``。
+    """
+    rgb_path = Path(rgb_path).expanduser().resolve()
+    output_path = Path(output_path).expanduser().resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    bgr = cv2.imread(str(rgb_path))
+    if bgr is None:
+        raise FileNotFoundError(f"cannot read rgb for SAM3 vis: {rgb_path}")
+    height, width = bgr.shape[:2]
+    image_size = (width, height)
+
+    if not instance_dets:
+        cv2.imwrite(str(output_path), bgr)
+        print(f"[sam3_seg_backend] vis (empty dets) -> {output_path}")
+        return output_path
+
+    label = (prompt or DEFAULT_SAM3_PROMPT).split()[0] or "obj"
+    overlay = bgr.astype(np.float32)
+
+    for idx, det in enumerate(instance_dets):
+        mask = _decode_detection_mask(det, image_size)
+        color = _VIS_COLORS_BGR[idx % len(_VIS_COLORS_BGR)]
+        color_arr = np.array(color, dtype=np.float32)
+        overlay[mask] = mask_alpha * color_arr + (1.0 - mask_alpha) * overlay[mask]
+
+        bbox = det.get("bbox")
+        if isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+            x, y, bw, bh = [int(round(v)) for v in bbox]
+        else:
+            x, y, bw, bh = _bbox_xywh_from_mask(mask)
+        x2, y2 = x + bw, y + bh
+
+        inst_id = (
+            int(instance_ids[idx])
+            if instance_ids is not None and idx < len(instance_ids)
+            else idx + 1
+        )
+        score = float(det.get("score", 0.0))
+        cv2.rectangle(overlay, (x, y), (x2, y2), color, 2)
+        cv2.putText(
+            overlay,
+            f"{label} id={inst_id} {score:.3f}",
+            (x, max(0, y - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            color,
+            2,
+            cv2.LINE_AA,
+        )
+
+    cv2.imwrite(str(output_path), overlay.astype(np.uint8))
+    print(f"[sam3_seg_backend] vis_ism -> {output_path} ({len(instance_dets)} instances)")
+    return output_path
+
+
+def visualize_sam3_mask_exr(
+    rgb_path: Path,
+    mask_exr_path: Path,
+    output_path: Path,
+    *,
+    alpha: float = 0.55,
+) -> Path:
+    """基于 ``mask.exr`` 实例 id 着色叠加（与 ``utils/exr_visualize.py`` 一致）。"""
+    from utils.exr_visualize import visualize_mask_exr
+
+    out = Path(output_path).expanduser().resolve()
+    visualize_mask_exr(
+        mask_exr_path,
+        rgb_path=rgb_path,
+        output_path=out,
+        alpha=alpha,
+        legend=True,
+    )
+    print(f"[sam3_seg_backend] vis_sam3_seg -> {out}")
+    return out
+
+
 def run_sam3_segmentation(
     rgb_path: Path,
     output_dir: Path,
@@ -481,6 +585,24 @@ def run_sam3_segmentation(
         mask_exr_out,
         max_instances=max_instances,
     )
+
+    vis_ism_path = sam6d_results / "vis_ism.png"
+    vis_sam3_seg_path = sam6d_results / "vis_sam3_seg.png"
+    instance_ids = list(range(1, num_instances + 1))
+    if instance_dets:
+        visualize_sam3_ism(
+            rgb_path,
+            instance_dets,
+            vis_ism_path,
+            prompt=prompt_text,
+            instance_ids=instance_ids,
+        )
+        visualize_sam3_mask_exr(rgb_path, mask_exr_out, vis_sam3_seg_path)
+    elif vis_ism_path.is_file():
+        print(f"[sam3_seg_backend] keep subprocess vis_ism: {vis_ism_path}")
+    else:
+        print(f"[sam3_seg_backend] no instance_dets for vis, skip")
+
     return Sam3SegmentationResult(
         detection_ism_path=json_path,
         mask_exr=mask_exr_out,
@@ -488,4 +610,5 @@ def run_sam3_segmentation(
         num_instances=num_instances,
         instance_scores=instance_scores,
         instance_dets=instance_dets,
+        vis_ism_path=vis_ism_path if vis_ism_path.is_file() else None,
     )

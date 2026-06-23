@@ -1,5 +1,7 @@
 """
 GenPose2 HTTP 服务：/infer 接收 rgb、depth、camera 三个 multipart 文件（与 warmup_http_service 一致）。
+可选上传 ``mask`` 时跳过分割，直接进行 GenPose2 推理（mask 支持 ``.exr`` / ``.png`` 等）。
+SAM3 分割时可通过表单字段 ``sam3_prompt`` 传入文本提示（优先于环境变量）。
 
 分割后端（``GENPOSE2_SEG_BACKEND`` 或 ``--seg-backend``）::
 
@@ -54,7 +56,7 @@ from segment.yolo_seg_backend import preload_yolo_model, run_yolo_segmentation  
 
 sys.argv = _ARGV_SAVED
 
-from fastapi import FastAPI, File, HTTPException, UploadFile  # noqa: E402
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
 
 
@@ -131,6 +133,18 @@ def _yolo_weights_path() -> Path:
     return path
 
 
+def _resolve_sam3_prompt(request_prompt: Optional[str]) -> str:
+    """请求 ``sam3_prompt`` > 环境变量 > ``DEFAULT_SAM3_PROMPT``。"""
+    if request_prompt is not None and request_prompt.strip():
+        return request_prompt.strip()
+    env_prompt = os.environ.get("GENPOSE2_SAM3_PROMPT") or os.environ.get("SAM6D_SAM3_PROMPT")
+    if env_prompt and env_prompt.strip():
+        return env_prompt.strip()
+    from segment.sam3_seg_backend import DEFAULT_SAM3_PROMPT
+
+    return DEFAULT_SAM3_PROMPT
+
+
 def _run_segmentation(
     *,
     backend: str,
@@ -138,11 +152,12 @@ def _run_segmentation(
     output_dir: Path,
     mask_exr_path: Path,
     detection_ism_path: Path,
-) -> tuple[float, float, Optional[Any]]:
+    sam3_prompt: Optional[str] = None,
+) -> tuple[float, float, Optional[Any], Optional[str]]:
     """
     运行分割，写出 ``mask.exr`` 与 ``detection_ism.json``。
 
-    :return: (det_score, seg_elapsed_s, sam3_result 或 None)
+    :return: (det_score, seg_elapsed_s, sam3_result 或 None, 实际使用的 sam3_prompt 或 None)
     """
     t0 = time.perf_counter()
     if backend == "yolo":
@@ -164,13 +179,13 @@ def _run_segmentation(
         )
         det_score = float(yolo_result.score)
         _write_yolo_detection_ism(detection_ism_path, det_score, mask_exr_path)
-        return det_score, time.perf_counter() - t0, None
+        return det_score, time.perf_counter() - t0, None, None
     elif backend == "sam3":
         from segment.sam3_seg_backend import run_sam3_segmentation
 
         # 0 = 保留 SAM3 ISM 全部实例（与 detection_ism.json 条数一致，供多实例 PEM）
         sam3_max_inst = int(os.environ.get("GENPOSE2_SAM3_MAX_INSTANCES", "0"))
-        prompt = os.environ.get("GENPOSE2_SAM3_PROMPT") or os.environ.get("SAM6D_SAM3_PROMPT")
+        prompt = _resolve_sam3_prompt(sam3_prompt)
         threshold = os.environ.get("GENPOSE2_SAM3_THRESHOLD") or os.environ.get("SAM6D_SAM3_THRESHOLD")
         mask_threshold = os.environ.get("GENPOSE2_SAM3_MASK_THRESHOLD") or os.environ.get(
             "SAM6D_SAM3_MASK_THRESHOLD"
@@ -186,11 +201,11 @@ def _run_segmentation(
         )
         det_score = float(sam3_result.score)
         print(
-            f"[http_server] SAM3 instances for PEM: {sam3_result.num_instances} "
+            f"[http_server] SAM3 prompt={prompt!r} instances for PEM: {sam3_result.num_instances} "
             f"(GENPOSE2_SAM3_MAX_INSTANCES={sam3_max_inst})"
         )
         _patch_detection_ism_mask_path(detection_ism_path, mask_exr_path)
-        return det_score, time.perf_counter() - t0, sam3_result
+        return det_score, time.perf_counter() - t0, sam3_result, prompt
     else:
         raise RuntimeError(f"unsupported segmentation backend: {backend}")
 
@@ -247,6 +262,84 @@ async def _save_upload(upload: UploadFile, path: Path) -> None:
             f.write(chunk)
 
 
+def _upload_basename(upload: UploadFile, default: str) -> str:
+    name = Path(upload.filename or default).name
+    if not name or name.startswith("."):
+        return default
+    return name
+
+
+def _load_mask_array(mask_path: Path) -> np.ndarray:
+    """读取 mask 为 (H,W) uint8 实例图：0=背景，1..N=实例 id。"""
+    suf = mask_path.suffix.lower()
+    if suf == ".exr":
+        return Dataset.load_mask(str(mask_path))
+    m = cv2.imread(str(mask_path), cv2.IMREAD_UNCHANGED)
+    if m is None:
+        raise FileNotFoundError(f"cannot read mask: {mask_path}")
+    if m.ndim == 3:
+        m = m[:, :, 0]
+    m = np.asarray(m)
+    if m.dtype == np.bool_:
+        return m.astype(np.uint8)
+    if np.issubdtype(m.dtype, np.floating):
+        fg = m > 0.5
+        if not np.any(fg):
+            raise ValueError("mask has no foreground pixels")
+        uniq = np.unique(m[fg])
+        if uniq.size == 1:
+            out = np.zeros(m.shape, dtype=np.uint8)
+            out[fg] = 1
+            return out
+        return m.astype(np.uint8)
+    if m.dtype != np.uint8:
+        m = m.astype(np.uint8)
+    fg_vals = np.unique(m[m > 0])
+    if fg_vals.size == 1 and fg_vals[0] == 255:
+        out = np.zeros(m.shape, dtype=np.uint8)
+        out[m > 127] = 1
+        return out
+    return m
+
+
+def _prepare_mask_for_inference(mask_path: Path, mask_exr_path: Path) -> np.ndarray:
+    """将上传的 mask 规范为 GenPose2/cutoop 可读的 mask.exr 并读回。"""
+    from segment.yolo_seg_backend import save_genpose2_mask_exr
+
+    mask_u8 = _load_mask_array(mask_path)
+    if not np.any(mask_u8 > 0):
+        raise ValueError("mask has no foreground pixels")
+    if int(mask_u8.max()) > 254:
+        raise ValueError("mask instance id must be in 1..254")
+    mask_exr_path.parent.mkdir(parents=True, exist_ok=True)
+    save_genpose2_mask_exr(mask_u8, mask_exr_path)
+    return Dataset.load_mask(str(mask_exr_path))
+
+
+def _write_provided_mask_detection_ism(
+    detection_ism_path: Path,
+    mask_exr_path: Path,
+    mask: np.ndarray,
+) -> None:
+    instance_ids = sorted(int(x) for x in np.unique(mask) if int(x) not in (0, 255))
+    detection_ism_path.write_text(
+        json.dumps(
+            [
+                {
+                    "scene_id": 0,
+                    "image_id": 0,
+                    "category_id": 1,
+                    "instance_id": iid,
+                    "score": 1.0,
+                    "segmentation_mask_exr": str(mask_exr_path),
+                }
+                for iid in instance_ids
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def _camera_json_to_meta(camera: Dict[str, Any], width: int, height: int) -> Dict[str, Any]:
     """将 warmup 风格 camera.json（cam_K + depth_scale）转为 InferDataset 用的 meta。"""
     if "camera" in camera and "intrinsics" in camera.get("camera", {}):
@@ -291,6 +384,51 @@ def _load_depth_array(depth_path: Path, depth_scale: float) -> np.ndarray:
     if d.dtype == np.uint16:
         return d.astype(np.float32) * float(depth_scale)
     return d.astype(np.float32)
+
+
+def _save_depth_colormap(
+    depth_m: np.ndarray,
+    output_path: Path,
+    *,
+    mask: Optional[np.ndarray] = None,
+    vmin: float = 0.3,
+    vmax: float = 1.0,
+    max_depth: float = 4.0,
+) -> None:
+    """深度伪彩色图；可选叠加 mask 目标框（bbox + 轮廓），不含 ROI。"""
+    valid = (depth_m > 0) & (depth_m <= max_depth)
+    d_show = depth_m.copy()
+    d_show[~valid] = 0
+    span = max(vmax - vmin, 1e-6)
+    d_norm = np.clip((d_show - vmin) / span, 0, 1)
+    d_u8 = (d_norm * 255).astype(np.uint8)
+    depth_color = cv2.applyColorMap(d_u8, cv2.COLORMAP_TURBO)
+    depth_color[~valid] = (30, 30, 30)
+
+    if mask is not None:
+        fg = np.asarray(mask) > 0
+        if np.any(fg):
+            fg_u8 = fg.astype(np.uint8)
+            contours, _ = cv2.findContours(fg_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(depth_color, contours, -1, (0, 255, 0), 2)
+            ys, xs = np.where(fg)
+            x1, x2 = int(xs.min()), int(xs.max())
+            y1, y2 = int(ys.min()), int(ys.max())
+            cv2.rectangle(depth_color, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            cv2.putText(
+                depth_color,
+                "target",
+                (x1 + 4, max(y1 - 8, 16)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (0, 0, 255),
+                2,
+                cv2.LINE_AA,
+            )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if not cv2.imwrite(str(output_path), depth_color):
+        raise RuntimeError(f"failed to write depth colormap: {output_path}")
 
 
 def _rotation_matrix_to_euler_zyx(rotation: List[List[float]]) -> List[float]:
@@ -361,6 +499,9 @@ def _run_genpose2_pipeline(
     depth_path: Path,
     camera_path: Path,
     output_dir: Path,
+    *,
+    sam3_prompt: Optional[str] = None,
+    mask_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     timing: InferTiming = {}
 
@@ -384,24 +525,41 @@ def _run_genpose2_pipeline(
     detection_pem_path = sam6d_dir / "detection_pem.json"
     vis_pem_path = sam6d_dir / "vis_pem.png"
     vis_ism_path = sam6d_dir / "vis_ism.png"
+    depth_colormap_path = sam6d_dir / "depth_colormap.png"
 
-    backend = _seg_backend()
-    print(f"[http_server] inference segmentation backend: {backend}")
-    det_score, seg_s, sam3_seg_result = _run_segmentation(
-        backend=backend,
-        rgb_path=rgb_path,
-        output_dir=output_dir,
-        mask_exr_path=mask_exr_path,
-        detection_ism_path=detection_ism_path,
-    )
-    yolo_s: Optional[float] = seg_s if backend == "yolo" else None
-    ism_s: Optional[float] = seg_s if backend == "sam3" else None
+    sam3_seg_result: Optional[Any] = None
+    resolved_sam3_prompt: Optional[str] = None
 
-    mask = Dataset.load_mask(str(mask_exr_path))
+    if mask_path is not None:
+        backend = "provided"
+        print("[http_server] inference: using uploaded mask, skip segmentation")
+        t0 = time.perf_counter()
+        mask = _prepare_mask_for_inference(mask_path, mask_exr_path)
+        _write_provided_mask_detection_ism(detection_ism_path, mask_exr_path, mask)
+        det_score = 1.0
+        seg_s = time.perf_counter() - t0
+        yolo_s = None
+        ism_s = None
+    else:
+        backend = _seg_backend()
+        print(f"[http_server] inference segmentation backend: {backend}")
+        det_score, seg_s, sam3_seg_result, resolved_sam3_prompt = _run_segmentation(
+            backend=backend,
+            rgb_path=rgb_path,
+            output_dir=output_dir,
+            mask_exr_path=mask_exr_path,
+            detection_ism_path=detection_ism_path,
+            sam3_prompt=sam3_prompt,
+        )
+        yolo_s = seg_s if backend == "yolo" else None
+        ism_s = seg_s if backend == "sam3" else None
+        mask = Dataset.load_mask(str(mask_exr_path))
     if depth.shape[:2] != (h, w) or mask.shape[:2] != (h, w):
         raise ValueError(
             f"rgb/depth/mask size mismatch: rgb={(h, w)}, depth={depth.shape[:2]}, mask={mask.shape[:2]}"
         )
+
+    _save_depth_colormap(depth, depth_colormap_path, mask=mask)
 
     _argv_user = sys.argv[:]
     sys.argv = [sys.argv[0] if sys.argv else "http_server"]
@@ -420,7 +578,22 @@ def _run_genpose2_pipeline(
         t0 = time.perf_counter()
         vis_bgr = visualize_pose(data, pose, length, visualize_pts=False, visualize_image=False)
         cv2.imwrite(str(vis_pem_path), vis_bgr)
-        cv2.imwrite(str(vis_ism_path), vis_bgr)
+        if backend == "sam3":
+            # vis_ism.png / vis_sam3_seg.png 由 sam3_seg_backend 在分割阶段生成，勿用 PEM 覆盖
+            if not vis_ism_path.is_file():
+                from segment.sam3_seg_backend import visualize_sam3_mask_exr
+
+                visualize_sam3_mask_exr(rgb_path, mask_exr_path, vis_ism_path)
+        elif backend in ("yolo", "provided"):
+            from utils.exr_visualize import visualize_mask_exr
+
+            visualize_mask_exr(
+                mask_exr_path,
+                rgb_path=rgb_path,
+                output_path=vis_ism_path,
+            )
+        else:
+            cv2.imwrite(str(vis_ism_path), vis_bgr)
         vis_s = time.perf_counter() - t0
         pose_s = infer_s + vis_s
     finally:
@@ -491,6 +664,14 @@ def _run_genpose2_pipeline(
     resp["seg_backend"] = backend
     resp["num_instances"] = len(detections_pem)
     resp["detections_pem"] = detections_pem
+    resp["depth_colormap_path"] = str(depth_colormap_path)
+    if backend == "provided":
+        resp["mask_source"] = "upload"
+    if backend == "sam3":
+        resp["sam3_prompt"] = resolved_sam3_prompt
+        vis_sam3_seg = sam6d_dir / "vis_sam3_seg.png"
+        if vis_sam3_seg.is_file():
+            resp["vis_sam3_seg_path"] = str(vis_sam3_seg)
     return resp
 
 
@@ -607,6 +788,8 @@ async def infer(
     rgb: UploadFile = File(...),
     depth: UploadFile = File(...),
     camera: UploadFile = File(...),
+    mask: Optional[UploadFile] = File(None),
+    sam3_prompt: Optional[str] = Form(None),
 ) -> JSONResponse:
     if _genpose_holder.get("model") is None:
         raise HTTPException(status_code=503, detail="GenPose2 model not loaded on server startup")
@@ -616,15 +799,28 @@ async def infer(
     input_dir = output_dir / "inputs"
     output_dir.mkdir(parents=True, exist_ok=False)
 
-    rgb_path = input_dir / "rgb.png"
-    depth_path = input_dir / "depth.png"
-    camera_path = input_dir / "camera.json"
+    rgb_path = input_dir / _upload_basename(rgb, "rgb.png")
+    depth_path = input_dir / _upload_basename(depth, "depth.png")
+    camera_path = input_dir / _upload_basename(camera, "camera.json")
+    mask_path: Optional[Path] = None
 
     t0 = time.perf_counter()
     await _save_upload(rgb, rgb_path)
     await _save_upload(depth, depth_path)
     await _save_upload(camera, camera_path)
+    if mask is not None:
+        mask_path = input_dir / _upload_basename(mask, "mask.exr")
+        await _save_upload(mask, mask_path)
+        if not mask_path.is_file() or mask_path.stat().st_size == 0:
+            mask_path.unlink(missing_ok=True)
+            mask_path = None
     upload_s = time.perf_counter() - t0
+
+    print(
+        f"[http_server] infer {request_id} "
+        f"mask={'provided' if mask_path else 'none'} "
+        f"seg={'skip' if mask_path else _seg_backend()}"
+    )
 
     try:
         with camera_path.open("r", encoding="utf-8") as f:
@@ -644,6 +840,8 @@ async def infer(
                 depth_path,
                 camera_path,
                 output_dir,
+                sam3_prompt=sam3_prompt,
+                mask_path=mask_path,
             )
             timing = payload["timing"]
             timing["upload_s"] = upload_s
