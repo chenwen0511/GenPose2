@@ -1,0 +1,14 @@
+{
+  "sam3": {
+    "api_url": "http://127.0.0.1:18003/infer",
+    "timeout_s": 300.0,
+    "threshold": 0.41,
+    "mask_threshold": 0.50,
+    "default_prompt": "white plastic tray"
+  },
+  "genpose2": {
+    "score_ckpt": "results/ckpts/ScoreNet/scorenet.pth",
+    "energy_ckpt": "results/ckpts/EnergyNet/energynet.pth",
+    "scale_ckpt": "results/ckpts/ScaleNet/scalenet.pth"
+  }
+}

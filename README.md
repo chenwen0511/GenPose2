@@ -156,7 +156,7 @@ Here we provide a script for real-time camera stream inference with the segmenta
   First you have to download [SAM2](https://github.com/Gy920/segment-anything-2-real-time) to the base directory, and follow the instruction download the checkpoint `sam2.1_hiera_tiny.pt`.
 
 ```bash
-pip install -r requirements_camera.txt
+pip install -r requirements.txt
 ```
 
 - ### Inference with RealSense D415 camera
@@ -199,6 +199,25 @@ If you find our work useful in your research, please consider citing:
   organization={Springer}
 }
 ```
+
+## 🖥️ Gradio UI（SAM3 / GenPose2）
+
+本地可视化页签（默认端口 **18090**）：
+
+| 页签 | 功能 |
+|------|------|
+| **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
+| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / `poses.json` / 坐标轴 GLB |
+
+```bash
+# 依赖已含在 requirements.txt（gradio、trimesh 等）
+# 需先启动外部 SAM3 HTTP（默认 http://127.0.0.1:18003/infer，见 config/conf.json）
+bash start.sh start|stop|restart|status
+# UI: http://<host>:18090/
+# 日志: logs/ui.log
+```
+
+配置：`config/conf.json`（SAM3 API、GenPose2 三网权重路径）。产物：`output/ui_runs/`。
 
 ## 📮 Contact
 

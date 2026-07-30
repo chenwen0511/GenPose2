@@ -215,7 +215,7 @@ Downloading: "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_
 ### 9.1 依赖与启动
 
 ```bash
-pip install -r requirements_http.txt   # fastapi、uvicorn、python-multipart
+pip install -r requirements.txt   # 含 fastapi、uvicorn、python-multipart 等
 
 # 在仓库根目录；YOLO 默认 segment/yolo_seg.pt，可用 GENPOSE2_YOLO_WEIGHTS 覆盖
 python http_server.py --host 0.0.0.0 --port 8002
@@ -321,4 +321,19 @@ curl -X POST "http://127.0.0.1:8002/infer" \
 | 命令行序列 | `runners/infer.py` | 已有完整 `*_color.png` 四件套目录 |
 
 HTTP 路径**不要求**事先准备好 `mask.exr`（服务内 YOLO 自动生成）；命令行 `smt_infer` 同理。
+
+---
+
+## 10. Gradio UI（本地可视化）
+
+```bash
+bash start.sh start    # http://0.0.0.0:18090/ ；日志 logs/ui.log
+```
+
+| 页签 | 说明 |
+|------|------|
+| SAM3 分割 | 外部 SAM3 HTTP 文本分割 + 实例点云 GLB |
+| SAM3 + GenPose2 | SAM3 → GenPose2 6D 位姿；配置见 `config/conf.json` |
+
+依赖外部 SAM3 服务（默认 `http://127.0.0.1:18003/infer`）。HTTP API 仍见上文第 9 节与 `doc/接口文档.md`。
 

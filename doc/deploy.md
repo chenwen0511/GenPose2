@@ -100,14 +100,7 @@ pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 \
 
 ```bash
 cd $ROOT
-pip install -r requirements.txt
-pip install -r requirements_http.txt
-```
-
-若使用 **YOLO 分割**（默认后端）：
-
-```bash
-pip install -r requirements_segment.txt --upgrade-strategy only-if-needed
+pip install -r requirements.txt --upgrade-strategy only-if-needed
 ```
 
 ### 4.3 编译 pointnet2
@@ -177,12 +170,28 @@ Application startup complete
 ```bash
 cd $ROOT
 conda activate genpose2
+mkdir -p logs
 
-nohup python http_server.py --host 0.0.0.0 --port 8002 > run.log 2>&1 &
-tail -f run.log
+nohup python http_server.py --host 0.0.0.0 --port 8002 > logs/http_server.log 2>&1 &
+tail -f logs/http_server.log
 ```
 
-### 6.3 systemd（生产环境，可选）
+### 6.3 Gradio UI（SAM3 分割 / SAM3+GenPose2）
+
+需先启动外部 SAM3 HTTP 服务（默认 `http://127.0.0.1:18003/infer`，见 `config/conf.json`）。
+
+```bash
+cd $ROOT
+conda activate genpose2
+bash start.sh start    # 默认 http://0.0.0.0:18090/
+bash start.sh status
+bash start.sh stop
+# 日志: logs/ui.log
+```
+
+页签：**SAM3 分割**；**SAM3 + GenPose2**（6D 位姿）。启动时在主线程预加载三网权重。
+
+### 6.4 systemd（生产环境，可选）
 
 创建 `/etc/systemd/system/genpose2.service`（按实际用户与路径修改）：
 
@@ -285,7 +294,7 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 
 | 现象 | 处理 |
 |------|------|
-| `GenPose2 model not loaded` | 检查 `results/ckpts/` 三个 `.pth` 是否存在；看 `run.log` 加载报错 |
+| `GenPose2 model not loaded` | 检查 `results/ckpts/` 三个 `.pth` 是否存在；看 `logs/http_server.log` 加载报错 |
 | `No module named 'cutoop'` | `pip install cutoop`，并安装 `libopenexr-dev` |
 | pointnet2 编译失败 | 确认 CUDA、gcc 与 PyTorch 版本匹配；在 pointnet2 目录重新 `python setup.py install` |
 | `YOLO returned no segmentation masks` | 未上传 mask 且 YOLO 未检出目标；改上传 mask 或换图/调 YOLO |
@@ -302,11 +311,12 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 - [ ] 三个 `.pth` 校验通过（约 233 MB）  
 - [ ] conda 环境 `genpose2` 已创建  
 - [ ] PyTorch CUDA 可用  
-- [ ] `requirements.txt` + `requirements_http.txt`（+ `requirements_segment.txt`）已安装  
+- [ ] `requirements.txt` 已安装  
 - [ ] pointnet2、cutoop 已安装  
 - [ ] `python http_server.py` 启动且 `genpose_loaded=true`  
 - [ ] `/health` 与一次 `/infer` 冒烟通过  
-- [ ] 防火墙已放行 `8002`（若远程访问）
+- [ ] （可选）`bash start.sh start` 后 Gradio UI `18090` 可访问；日志在 `logs/`  
+- [ ] 防火墙已放行 `8002`（若远程访问；UI 为 `18090`）
 
 ---
 
@@ -314,7 +324,8 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 
 | 文档 | 内容 |
 |------|------|
-| `README.md` | 项目总览与训练环境说明 |
+| `README.md` | 项目总览、Gradio UI、训练环境说明 |
+| `config/conf.json` | UI / SAM3 API / GenPose2 权重默认配置 |
 | `learning/infer.md` | 离线推理与 HTTP 说明 |
 | `learning/如何补救.md` | depth / mask 质量与补救 |
 | `learning/案例分析1.md` | 深度丢失案例 |

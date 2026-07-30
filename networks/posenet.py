@@ -39,9 +39,17 @@ class GFObjectPose(nn.Module):
         self.T = T
         # self.prior_fn, self.marginal_prob_fn, self.sde_fn, self.sampling_eps = init_sde(cfg.sde_mode)
         
-        ''' dino v2 '''
+        ''' dino v2（优先本地 hub 缓存，避免 torch.hub 联网校验 GitHub 失败） '''
         if cfg.dino != 'none':
-            self.dino : nn.Module = torch.hub.load('facebookresearch/dinov2', GFObjectPose.dino_name).to(cfg.device)
+            dino_cache = os.path.join(torch.hub.get_dir(), 'facebookresearch_dinov2_main')
+            if os.path.isdir(dino_cache):
+                self.dino: nn.Module = torch.hub.load(
+                    dino_cache, GFObjectPose.dino_name, source='local'
+                ).to(cfg.device)
+            else:
+                self.dino: nn.Module = torch.hub.load(
+                    'facebookresearch/dinov2', GFObjectPose.dino_name
+                ).to(cfg.device)
             self.dino.requires_grad_(False)
             self.dino_dim = GFObjectPose.dino_dim
             self.embedding_dim = GFObjectPose.embedding_dim

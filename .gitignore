@@ -11,5 +11,6 @@ results/*
 common
 *.DS_Store
 service_outputs/*
-
-run.log
+output/ui_runs/*
+logs/
+.pids/
