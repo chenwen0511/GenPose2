@@ -333,7 +333,7 @@ bash start.sh start    # http://0.0.0.0:18090/ ；日志 logs/ui.log
 | 页签 | 说明 |
 |------|------|
 | SAM3 分割 | 外部 SAM3 HTTP 文本分割 + 实例点云 GLB |
-| SAM3 + GenPose2 | SAM3 → GenPose2 6D 位姿；配置见 `config/conf.json` |
+| SAM3 + GenPose2 | SAM3 → GenPose2 6D 位姿；提示词可手写，或由 VLM（`config/conf.json` → `vlm`）根据 RGB + 商品中文名生成 |
 
-依赖外部 SAM3 服务（默认 `http://127.0.0.1:18003/infer`）。HTTP API 仍见上文第 9 节与 `doc/接口文档.md`。
+依赖外部 SAM3 服务（默认 `http://127.0.0.1:18003/infer`）。VLM 默认 `POST /v1/chat/completions`（见 `vlm.api_url` / `vlm.model`）。HTTP API 仍见上文第 9 节与 `doc/接口文档.md`。
 

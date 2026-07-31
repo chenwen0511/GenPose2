@@ -26,6 +26,10 @@ def get_sam3_conf() -> Dict[str, Any]:
     return dict(load_conf().get("sam3") or {})
 
 
+def get_vlm_conf() -> Dict[str, Any]:
+    return dict(load_conf().get("vlm") or {})
+
+
 def get_genpose2_conf() -> Dict[str, Any]:
     return dict(load_conf().get("genpose2") or {})
 

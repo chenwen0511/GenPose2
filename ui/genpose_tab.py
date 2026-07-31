@@ -19,7 +19,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from config import get_genpose2_conf, get_sam3_conf, resolve_repo_path  # noqa: E402
+from config import get_genpose2_conf, get_sam3_conf, get_vlm_conf, resolve_repo_path  # noqa: E402
 from ui.common import (  # noqa: E402
     clean_instance_id_map,
     clean_workspace_mask,
@@ -50,6 +50,12 @@ from scripts.sam3_seg import (  # noqa: E402
     run_sam3_segmentation,
 )
 from scripts import sam3_seg  # noqa: E402
+from scripts.vlm_prompt import (  # noqa: E402
+    DEFAULT_VLM_API_URL,
+    DEFAULT_VLM_MODEL,
+    DEFAULT_VLM_TIMEOUT_S,
+    generate_sam3_prompt_from_image,
+)
 
 OUTPUT_ROOT = ROOT_DIR / "output" / "ui_runs"
 logger = logging.getLogger("genpose_tab")
@@ -108,11 +114,43 @@ def _error(message: str, sensor_vis: Optional[Image.Image] = None) -> GenPoseTab
     )
 
 
+def generate_prompt_ui(
+    rgb_img: Optional[Image.Image],
+    chinese_name: str,
+    vlm_api_url: str,
+    vlm_model: str,
+    vlm_timeout_s: float,
+) -> Tuple[str, str]:
+    """UI：根据 RGB + 商品中文名调用 VLM，回填实例分割提示词。"""
+    try:
+        if rgb_img is None:
+            return "", "请先上传 RGB 图像"
+        name = (chinese_name or "").strip()
+        if not name:
+            return "", "请填写商品中文名"
+        prompt = generate_sam3_prompt_from_image(
+            rgb_img.convert("RGB"),
+            name,
+            api_url=(vlm_api_url or DEFAULT_VLM_API_URL).strip(),
+            model=(vlm_model or DEFAULT_VLM_MODEL).strip(),
+            timeout_s=float(vlm_timeout_s or DEFAULT_VLM_TIMEOUT_S),
+        )
+        return prompt, f"已生成提示词：{prompt}"
+    except Exception as exc:  # noqa: BLE001
+        logger.error("VLM generate prompt failed:\n%s", traceback.format_exc())
+        return "", f"生成失败：{exc}"
+
+
 def run_sam3_genpose_tab(
     rgb_img: Optional[Image.Image],
     depth_file: Any,
     camera_file: Any,
     prompt: str,
+    chinese_name: str,
+    use_vlm_prompt: bool,
+    vlm_api_url: str,
+    vlm_model: str,
+    vlm_timeout_s: float,
     api_url: str,
     threshold: float,
     mask_threshold: float,
@@ -152,10 +190,33 @@ def run_sam3_genpose_tab(
             if not path.is_file():
                 return _error(f"{name} checkpoint 不存在: {path}")
 
-        prompt_text = (prompt or "").strip() or DEFAULT_SAM3_PROMPT
+        rgb = rgb_img.convert("RGB")
+        vlm_meta: Dict[str, Any] = {"enabled": False}
+        if bool(use_vlm_prompt):
+            name = (chinese_name or "").strip()
+            if not name:
+                return _error("已勾选「大模型生成提示词」，请填写商品中文名")
+            t_vlm = time.perf_counter()
+            prompt_text = generate_sam3_prompt_from_image(
+                rgb,
+                name,
+                api_url=(vlm_api_url or DEFAULT_VLM_API_URL).strip(),
+                model=(vlm_model or DEFAULT_VLM_MODEL).strip(),
+                timeout_s=float(vlm_timeout_s or DEFAULT_VLM_TIMEOUT_S),
+            )
+            vlm_meta = {
+                "enabled": True,
+                "chinese_name": name,
+                "prompt": prompt_text,
+                "api_url": (vlm_api_url or DEFAULT_VLM_API_URL).strip(),
+                "model": (vlm_model or DEFAULT_VLM_MODEL).strip(),
+                "elapsed_s": round(time.perf_counter() - t_vlm, 3),
+            }
+        else:
+            prompt_text = (prompt or "").strip() or DEFAULT_SAM3_PROMPT
+
         depth_mm = load_depth_mm(depth_path)
         intrinsic, factor_depth, camera_meta = load_camera_json_full(camera_path)
-        rgb = rgb_img.convert("RGB")
         if rgb.size != (depth_mm.shape[1], depth_mm.shape[0]):
             return _error(
                 f"RGB 尺寸 {rgb.size} 与深度 {depth_mm.shape[1]}x{depth_mm.shape[0]} 不一致"
@@ -345,6 +406,7 @@ def run_sam3_genpose_tab(
             "rgb_shift": rgb_shift_meta,
             "sam3_api": sam3_seg.DEFAULT_SAM3_API_URL,
             "prompt": prompt_text,
+            "vlm_prompt": vlm_meta,
             "score_ckpt": str(resolve_repo_path(score_ckpt)),
             "energy_ckpt": str(resolve_repo_path(energy_ckpt)),
             "scale_ckpt": str(resolve_repo_path(scale_ckpt)),
@@ -370,10 +432,12 @@ def run_sam3_genpose_tab(
 def build_sam3_genpose_tab() -> None:
     sam3_cfg = get_sam3_conf()
     gp_cfg = get_genpose2_conf()
+    vlm_cfg = get_vlm_conf()
     with gr.Tab("SAM3 + GenPose2"):
         gr.Markdown(
             "流水线：**SAM3 文本分割 → GenPose2 6D 位姿估计**。"
             "输出位姿叠加图、`poses.json`、点云 GLB（RGB 坐标轴）。"
+            "实例分割提示词可由多模态大模型根据 RGB + 商品中文名自动生成。"
         )
         with gr.Row():
             with gr.Column(scale=1):
@@ -400,11 +464,37 @@ def build_sam3_genpose_tab() -> None:
                         value=0,
                         precision=0,
                     )
+                chinese_name = gr.Textbox(
+                    label="商品中文名（供大模型生成提示词）",
+                    placeholder="例如：白色塑料托盘",
+                    lines=1,
+                )
+                with gr.Row():
+                    use_vlm_prompt = gr.Checkbox(
+                        label="运行前由大模型生成提示词",
+                        value=False,
+                    )
+                    btn_gen_prompt = gr.Button("生成提示词", variant="secondary")
                 prompt = gr.Textbox(
                     label="实例分割提示词",
                     value=str(sam3_cfg.get("default_prompt") or DEFAULT_SAM3_PROMPT),
                     lines=3,
                 )
+                vlm_status = gr.Textbox(label="提示词生成状态", interactive=False, lines=1)
+                with gr.Accordion("大模型（VLM）参数", open=False):
+                    vlm_api = gr.Textbox(
+                        label="VLM API URL",
+                        value=str(vlm_cfg.get("api_url") or DEFAULT_VLM_API_URL),
+                    )
+                    vlm_model = gr.Textbox(
+                        label="VLM 模型名",
+                        value=str(vlm_cfg.get("model") or DEFAULT_VLM_MODEL),
+                    )
+                    vlm_timeout = gr.Number(
+                        label="VLM 超时（秒）",
+                        value=float(vlm_cfg.get("timeout_s", DEFAULT_VLM_TIMEOUT_S)),
+                        precision=0,
+                    )
                 with gr.Accordion("SAM3 推理参数", open=False):
                     api = gr.Textbox(
                         label="SAM3 API URL",
@@ -507,6 +597,12 @@ def build_sam3_genpose_tab() -> None:
         )
         out_json = gr.Code(label="详情", language="json", lines=14)
 
+        btn_gen_prompt.click(
+            fn=generate_prompt_ui,
+            inputs=[rgb, chinese_name, vlm_api, vlm_model, vlm_timeout],
+            outputs=[prompt, vlm_status],
+        )
+
         btn.click(
             fn=run_sam3_genpose_tab,
             inputs=[
@@ -514,6 +610,11 @@ def build_sam3_genpose_tab() -> None:
                 depth,
                 camera,
                 prompt,
+                chinese_name,
+                use_vlm_prompt,
+                vlm_api,
+                vlm_model,
+                vlm_timeout,
                 api,
                 thr,
                 mthr,
@@ -550,6 +651,8 @@ def build_sam3_genpose_tab() -> None:
         gr.Markdown(
             """
             **说明**
+            - **提示词**：可手写；或填「商品中文名」后点「生成提示词」/勾选「运行前由大模型生成」
+            - **VLM**：`POST /v1/chat/completions`（传 RGB + 指令），默认 `qwen3-vl-4b`
             - **SAM3**：外部 HTTP `POST /infer`（`image_base64`），生成实例 mask
             - **离群点剔除**：先 **全局**（深度范围+SOR），再 **按实例**（MAD+SOR），清洗后再送 GenPose2
             - **GenPose2**：ScoreNet → EnergyNet → ScaleNet，估计 6D 位姿与 3D 尺寸（无需 CAD）

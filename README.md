@@ -207,7 +207,7 @@ If you find our work useful in your research, please consider citing:
 | 页签 | 功能 |
 |------|------|
 | **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
-| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / `poses.json` / 坐标轴 GLB |
+| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / `poses.json` / 坐标轴 GLB；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
 
 ```bash
 # 依赖已含在 requirements.txt（gradio、trimesh 等）
@@ -217,7 +217,9 @@ bash start.sh start|stop|restart|status
 # 日志: logs/ui.log
 ```
 
-配置：`config/conf.json`（SAM3 API、GenPose2 三网权重路径）。产物：`output/ui_runs/`。
+配置：`config/conf.json`（`sam3` API、`vlm` 多模态提示词、`genpose2` 三网权重）。产物：`output/ui_runs/`。
+
+**SAM3 + GenPose2 提示词**：可手写；或填「商品中文名」后点「生成提示词」/勾选「运行前由大模型生成」。VLM 默认 `POST` `config/conf.json` → `vlm.api_url`（模型 `qwen3-vl-4b`），实现见 `scripts/vlm_prompt.py`。
 
 ## 📮 Contact
 

@@ -189,7 +189,7 @@ bash start.sh stop
 # 日志: logs/ui.log
 ```
 
-页签：**SAM3 分割**；**SAM3 + GenPose2**（6D 位姿）。启动时在主线程预加载三网权重。
+页签：**SAM3 分割**；**SAM3 + GenPose2**（6D 位姿；可选 VLM 生成实例分割提示词，配置 `conf.json` → `vlm`）。启动时在主线程预加载三网权重。
 
 ### 6.4 systemd（生产环境，可选）
 
@@ -325,7 +325,7 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 | 文档 | 内容 |
 |------|------|
 | `README.md` | 项目总览、Gradio UI、训练环境说明 |
-| `config/conf.json` | UI / SAM3 API / GenPose2 权重默认配置 |
+| `config/conf.json` | UI / SAM3 API / VLM 提示词 / GenPose2 权重默认配置 |
 | `learning/infer.md` | 离线推理与 HTTP 说明 |
 | `learning/如何补救.md` | depth / mask 质量与补救 |
 | `learning/案例分析1.md` | 深度丢失案例 |
