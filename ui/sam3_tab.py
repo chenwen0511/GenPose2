@@ -19,6 +19,8 @@ if str(ROOT_DIR) not in sys.path:
 
 from config import get_sam3_conf  # noqa: E402
 from ui.common import (  # noqa: E402
+    clean_instance_id_map,
+    clean_workspace_mask,
     depth_to_colormap,
     detection_summary,
     filepath_from_upload,
@@ -75,6 +77,14 @@ def run_sam3_tab(
     max_instances: int,
     rgb_shift_x: float = -45.0,
     rgb_shift_y: float = 0.0,
+    enable_workspace_outlier: bool = True,
+    max_depth_mm: float = 2500,
+    min_depth_mm: float = 50,
+    depth_percentile_hi: float = 99.0,
+    enable_instance_outlier: bool = True,
+    sor_nb_neighbors: float = 20,
+    sor_std_ratio: float = 1.5,
+    z_mad_ratio: float = 2.5,
 ) -> Sam3TabOut:
     try:
         if rgb_img is None:
@@ -94,6 +104,23 @@ def run_sam3_tab(
             return _error(
                 f"RGB 尺寸 {rgb.size} 与深度 {depth_mm.shape[1]}x{depth_mm.shape[0]} 不一致"
             )
+
+        workspace_stats: Dict[str, Any] = {"enabled": False}
+        if bool(enable_workspace_outlier):
+            ws_mask, workspace_stats = clean_workspace_mask(
+                depth_mm,
+                intrinsic,
+                factor_depth=factor_depth,
+                max_depth_mm=float(max_depth_mm or 0),
+                min_depth_mm=float(min_depth_mm or 0),
+                depth_percentile_hi=float(depth_percentile_hi or 0),
+                remove_statistical_outliers=True,
+                sor_nb_neighbors=int(sor_nb_neighbors or 20),
+                sor_std_ratio=float(sor_std_ratio or 1.5),
+            )
+            workspace_stats["enabled"] = True
+            depth_mm = depth_mm.copy()
+            depth_mm[~ws_mask] = 0
 
         sensor_vis = depth_to_colormap(depth_mm)
         run_dir = OUTPUT_ROOT / time.strftime("%Y%m%d_%H%M%S") / f"sam3_{uuid.uuid4().hex[:8]}"
@@ -142,6 +169,24 @@ def run_sam3_tab(
                 nearest=True,
             )
 
+        # 全局剔除后的无效深度上不再保留实例标签
+        id_map = id_map.copy()
+        id_map[depth_mm <= 0] = 0
+
+        instance_outlier_stats: Dict[str, Any] = {"enabled": False}
+        if bool(enable_instance_outlier):
+            id_map, _removed, instance_outlier_stats = clean_instance_id_map(
+                depth_mm,
+                id_map,
+                intrinsic,
+                factor_depth=factor_depth,
+                std_ratio=float(sor_std_ratio or 1.5),
+                z_mad_ratio=float(z_mad_ratio or 2.5),
+                sor_nb_neighbors=int(sor_nb_neighbors or 20),
+            )
+            if not np.any(id_map > 0):
+                return _error("离群点剔除后无有效实例点，请放宽参数", sensor_vis)
+
         points, colors, pc_stats = depth_instance_to_pointcloud(
             depth_mm,
             id_map,
@@ -156,7 +201,7 @@ def run_sam3_tab(
         payload = {
             "success": True,
             "elapsed_s": round(elapsed, 3),
-            "num_instances": result.num_instances,
+            "num_instances": int(len(np.unique(id_map[id_map > 0]))),
             "detections": detection_summary(dets),
             "pointcloud": {
                 **pc_stats,
@@ -164,6 +209,8 @@ def run_sam3_tab(
                 "preview_frame": "glb_y_up",
                 "unit": "m",
             },
+            "workspace_outlier_filter": workspace_stats,
+            "instance_outlier_filter": instance_outlier_stats,
             "rgb_shift": rgb_shift_meta,
             "scene_glb": glb,
             "scene_ply": ply,
@@ -248,6 +295,28 @@ def build_sam3_tab() -> None:
                         precision=0,
                     )
                     max_inst = gr.Number(label="max_instances（0=全部）", value=5, precision=0)
+                with gr.Accordion("点云离群点剔除", open=True):
+                    enable_workspace = gr.Checkbox(
+                        label="① 全局：整幅深度点云离群点剔除（深度范围 + SOR）",
+                        value=True,
+                    )
+                    with gr.Row():
+                        max_depth = gr.Number(label="max_depth_mm（0=不限制）", value=2500, precision=0)
+                        min_depth = gr.Number(label="min_depth_mm", value=50, precision=0)
+                        depth_pct = gr.Number(label="depth_percentile_hi（0=关）", value=99.0)
+                    enable_instance = gr.Checkbox(
+                        label="② 按实例：各 SAM3 实例独立剔除（median/MAD + SOR）",
+                        value=True,
+                    )
+                    sor_k = gr.Number(label="SOR 邻域点数 nb_neighbors", value=20, precision=0)
+                    sor_std = gr.Number(
+                        label="SOR / 空间 std_ratio（越小越狠，常用 1.0~2.0）",
+                        value=1.5,
+                    )
+                    z_mad = gr.Number(
+                        label="实例深度 z_mad_ratio（MAD 倍数）",
+                        value=2.5,
+                    )
                 btn = gr.Button("开始分割", variant="primary")
 
             with gr.Column(scale=1):
@@ -285,6 +354,14 @@ def build_sam3_tab() -> None:
                 max_inst,
                 rgb_shift_x,
                 rgb_shift_y,
+                enable_workspace,
+                max_depth,
+                min_depth,
+                depth_pct,
+                enable_instance,
+                sor_k,
+                sor_std,
+                z_mad,
             ],
             outputs=[out_depth, out_mask, out_bbox, out_glb, out_glb_dl, out_ply_dl, out_json],
         )
@@ -293,7 +370,8 @@ def build_sam3_tab() -> None:
             f"""
             **说明**
             - 实例分割：SAM3 `POST /infer`（`image_base64`），默认 API `{cfg.get('api_url') or DEFAULT_SAM3_API_URL}`
-            - 点云由传感器深度反投影；实例色相对深度默认 `rgb_shift dx=-45`（可用 UI / `camera.json` 的 `rgb_shift`）
+            - 点云：先 **全局** 深度/SOR 剔除，再按 **实例** 做 MAD+SOR，最后导出 GLB
+            - 实例色相对深度默认 `rgb_shift dx=-45`（可用 UI / `camera.json` 的 `rgb_shift`）
             - 配置见 `config/conf.json`
             """
         )

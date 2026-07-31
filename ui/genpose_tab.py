@@ -21,6 +21,8 @@ if str(ROOT_DIR) not in sys.path:
 
 from config import get_genpose2_conf, get_sam3_conf, resolve_repo_path  # noqa: E402
 from ui.common import (  # noqa: E402
+    clean_instance_id_map,
+    clean_workspace_mask,
     depth_to_colormap,
     detection_summary,
     filepath_from_upload,
@@ -33,7 +35,6 @@ from ui.genpose_runner import (  # noqa: E402
     build_poses_payload,
     camera_json_to_meta,
     export_pose_scene,
-    load_depth_meters,
     load_mask_u8,
     run_genpose2_from_mask,
 )
@@ -123,6 +124,14 @@ def run_sam3_genpose_tab(
     max_points: float,
     rgb_shift_x: float = -45.0,
     rgb_shift_y: float = 0.0,
+    enable_workspace_outlier: bool = True,
+    max_depth_mm: float = 2500,
+    min_depth_mm: float = 50,
+    depth_percentile_hi: float = 99.0,
+    enable_instance_outlier: bool = True,
+    sor_nb_neighbors: float = 20,
+    sor_std_ratio: float = 1.5,
+    z_mad_ratio: float = 2.5,
 ) -> GenPoseTabOut:
     try:
         if rgb_img is None:
@@ -168,6 +177,23 @@ def run_sam3_genpose_tab(
                 color_np, int(rgb_shift_meta["dx"]), int(rgb_shift_meta["dy"])
             )
 
+        workspace_stats: Dict[str, Any] = {"enabled": False}
+        if bool(enable_workspace_outlier):
+            ws_mask, workspace_stats = clean_workspace_mask(
+                depth_mm,
+                intrinsic,
+                factor_depth=factor_depth,
+                max_depth_mm=float(max_depth_mm or 0),
+                min_depth_mm=float(min_depth_mm or 0),
+                depth_percentile_hi=float(depth_percentile_hi or 0),
+                remove_statistical_outliers=True,
+                sor_nb_neighbors=int(sor_nb_neighbors or 20),
+                sor_std_ratio=float(sor_std_ratio or 1.5),
+            )
+            workspace_stats["enabled"] = True
+            depth_mm = depth_mm.copy()
+            depth_mm[~ws_mask] = 0
+
         sensor_vis = depth_to_colormap(depth_mm)
         run_dir = OUTPUT_ROOT / time.strftime("%Y%m%d_%H%M%S") / f"pose_{uuid.uuid4().hex[:8]}"
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -202,14 +228,34 @@ def run_sam3_genpose_tab(
                     (depth_mm.shape[1], depth_mm.shape[0]), Image.NEAREST
                 )
             )
+        # 全局无效深度上的实例像素清掉
+        mask_u8 = mask_u8.copy()
+        mask_u8[depth_mm <= 0] = 0
+
+        instance_outlier_stats: Dict[str, Any] = {"enabled": False}
+        if bool(enable_instance_outlier):
+            mask_u8, _removed, instance_outlier_stats = clean_instance_id_map(
+                depth_mm,
+                mask_u8,
+                intrinsic,
+                factor_depth=factor_depth,
+                std_ratio=float(sor_std_ratio or 1.5),
+                z_mad_ratio=float(z_mad_ratio or 2.5),
+                sor_nb_neighbors=int(sor_nb_neighbors or 20),
+            )
+            if not np.any(mask_u8 > 0):
+                return _error("离群点剔除后无有效实例点，请放宽参数", sensor_vis)
+            cleaned_mask_path = run_dir / "mask_cleaned.png"
+            Image.fromarray(mask_u8.astype(np.uint8)).save(cleaned_mask_path)
+            instance_outlier_stats["mask_cleaned"] = str(cleaned_mask_path)
 
         h, w = color_np.shape[:2]
         meta = camera_json_to_meta(camera_meta, width=w, height=h)
         depth_scale = float(meta.get("depth_scale", camera_meta.get("depth_scale", 0.001)))
         if depth_path.suffix.lower() == ".png" and depth_scale >= 0.1:
-            # camera.json often stores depth_scale=1.0 meaning "raw is mm"
             depth_scale = 0.001
-        depth_m = load_depth_meters(depth_path, depth_scale)
+        # 与清洗后的 depth_mm 对齐（米）
+        depth_m = depth_mm.astype(np.float32) / float(factor_depth)
         if depth_m.shape[:2] != (h, w):
             return _error(
                 f"深度尺寸 {depth_m.shape[:2]} 与 RGB {(h, w)} 不一致", sensor_vis
@@ -287,6 +333,8 @@ def run_sam3_genpose_tab(
             "num_instances": int(sam3_result.num_instances),
             "num_poses": int(poses_np.shape[0]),
             "detections": detection_summary(dets),
+            "workspace_outlier_filter": workspace_stats,
+            "instance_outlier_filter": instance_outlier_stats,
             "poses": {
                 "num": int(poses_np.shape[0]),
                 "glb": files["glb"],
@@ -384,6 +432,28 @@ def build_sam3_genpose_tab() -> None:
                         precision=0,
                     )
                     max_inst = gr.Number(label="max_instances（0=全部）", value=5, precision=0)
+                with gr.Accordion("点云离群点剔除", open=True):
+                    enable_workspace = gr.Checkbox(
+                        label="① 全局：整幅深度点云离群点剔除（深度范围 + SOR）",
+                        value=True,
+                    )
+                    with gr.Row():
+                        max_depth = gr.Number(label="max_depth_mm（0=不限制）", value=2500, precision=0)
+                        min_depth = gr.Number(label="min_depth_mm", value=50, precision=0)
+                        depth_pct = gr.Number(label="depth_percentile_hi（0=关）", value=99.0)
+                    enable_instance = gr.Checkbox(
+                        label="② 按实例：各 SAM3 实例独立剔除后再送 GenPose2（median/MAD + SOR）",
+                        value=True,
+                    )
+                    sor_k = gr.Number(label="SOR 邻域点数 nb_neighbors", value=20, precision=0)
+                    sor_std = gr.Number(
+                        label="SOR / 空间 std_ratio（越小越狠，常用 1.0~2.0）",
+                        value=1.5,
+                    )
+                    z_mad = gr.Number(
+                        label="实例深度 z_mad_ratio（MAD 倍数）",
+                        value=2.5,
+                    )
                 with gr.Accordion("GenPose2 参数", open=True):
                     score = gr.Textbox(
                         label="score_ckpt",
@@ -455,6 +525,14 @@ def build_sam3_genpose_tab() -> None:
                 max_pts,
                 rgb_shift_x,
                 rgb_shift_y,
+                enable_workspace,
+                max_depth,
+                min_depth,
+                depth_pct,
+                enable_instance,
+                sor_k,
+                sor_std,
+                z_mad,
             ],
             outputs=[
                 out_depth,
@@ -473,6 +551,7 @@ def build_sam3_genpose_tab() -> None:
             """
             **说明**
             - **SAM3**：外部 HTTP `POST /infer`（`image_base64`），生成实例 mask
+            - **离群点剔除**：先 **全局**（深度范围+SOR），再 **按实例**（MAD+SOR），清洗后再送 GenPose2
             - **GenPose2**：ScoreNet → EnergyNet → ScaleNet，估计 6D 位姿与 3D 尺寸（无需 CAD）
             - **poses.json**：`xyz_mm` + ZYX 欧拉角（rad）+ `size_3d`（米），相机系
             - **点云 RGB 偏移**：仅影响 GLB 上色（默认 dx=-45）；也可用 `camera.json` 的 `rgb_shift:[dx,dy]`。不影响 SAM3 / GenPose2 / 2D 叠加图

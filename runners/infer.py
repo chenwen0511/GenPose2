@@ -261,7 +261,7 @@ def visualize_pose(data:InferDataset, all_final_pose, all_final_length, visualiz
             draw_label=False,
             draw_pred_axes_length=0.1,
             draw_gt_axes_length=None,
-            thickness=True,
+            thickness=2,
         )
     
     if visualize_image:
