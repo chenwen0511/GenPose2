@@ -48,6 +48,37 @@ from config import get_sam3_conf  # noqa: E402
 
 _COCOMASK = None
 
+# SAM3 实例 mask 后处理：各实例边界向内收缩的像素数
+DEFAULT_INSTANCE_EDGE_ERODE_PX = 2
+
+
+def erode_bool_mask(mask: np.ndarray, pixels: int = DEFAULT_INSTANCE_EDGE_ERODE_PX) -> np.ndarray:
+    """二值/bool mask 边界腐蚀 ``pixels`` 像素（3x3 核，iterations=pixels）。"""
+    if pixels <= 0:
+        return mask
+    region = (np.asarray(mask) > 0).astype(np.uint8)
+    eroded = cv2.erode(region, np.ones((3, 3), np.uint8), iterations=int(pixels))
+    if mask.dtype == bool:
+        return eroded.astype(bool)
+    return eroded
+
+
+def erode_instance_id_map(
+    id_map: np.ndarray,
+    pixels: int = DEFAULT_INSTANCE_EDGE_ERODE_PX,
+) -> np.ndarray:
+    """对实例 id 图中每个实例独立腐蚀边界，背景保持 0。"""
+    if pixels <= 0:
+        return id_map
+    src = np.asarray(id_map)
+    out = np.zeros_like(src)
+    kernel = np.ones((3, 3), np.uint8)
+    for inst_id in sorted(int(v) for v in np.unique(src) if int(v) > 0):
+        region = (src == inst_id).astype(np.uint8)
+        eroded = cv2.erode(region, kernel, iterations=int(pixels))
+        out[eroded > 0] = inst_id
+    return out
+
 
 def _save_instance_id_mask(composite: np.ndarray, mask_path: Path) -> Path:
     """保存实例 id 图（像素值 1..N 表示各实例）。"""
@@ -420,11 +451,37 @@ def write_genpose_mask_exr_from_ism(
     if not np.any(composite > 0):
         raise RuntimeError(f"no foreground pixels in mask from {ism_json_path}")
 
+    # 后处理：每个实例去掉边缘 2 像素；腐蚀后为空的实例丢弃并重排 id
+    eroded = erode_instance_id_map(composite, DEFAULT_INSTANCE_EDGE_ERODE_PX)
+    alive = {int(v) for v in np.unique(eroded) if int(v) > 0}
+    if not alive:
+        raise RuntimeError(
+            f"instance edge erode ({DEFAULT_INSTANCE_EDGE_ERODE_PX}px) removed all foreground "
+            f"from {ism_json_path}"
+        )
+    new_composite = np.zeros_like(eroded)
+    new_scores: List[float] = []
+    new_dets: List[Dict[str, Any]] = []
+    new_id = 1
+    for old_id, score, det in zip(
+        range(1, len(instance_scores) + 1), instance_scores, instance_dets
+    ):
+        if old_id not in alive:
+            continue
+        new_composite[eroded == old_id] = np.uint8(new_id)
+        new_scores.append(score)
+        new_dets.append(det)
+        new_id += 1
+    composite = new_composite
+    instance_scores = new_scores
+    instance_dets = new_dets
+
     num_instances = len(instance_scores)
     saved_mask_path = _save_instance_id_mask(composite, mask_exr_path)
     print(
         f"[sam3_seg] instance mask -> {saved_mask_path} "
-        f"(instances={num_instances}/{len(dets)} ism dets, best_score={best_score:.4f})"
+        f"(instances={num_instances}/{len(dets)} ism dets, "
+        f"edge_erode_px={DEFAULT_INSTANCE_EDGE_ERODE_PX}, best_score={best_score:.4f})"
     )
     return best_score, num_instances, instance_scores, instance_dets
 
@@ -545,9 +602,17 @@ def visualize_sam3_mask_exr(
 def get_instance_bool_masks(
     instance_dets: List[Dict[str, Any]],
     image_size: Tuple[int, int],
+    *,
+    edge_erode_px: int = DEFAULT_INSTANCE_EDGE_ERODE_PX,
 ) -> List[np.ndarray]:
-    """从 SAM3 detection 列表解码各实例 bool mask，``image_size`` 为 (W, H)。"""
-    return [_decode_detection_mask(det, image_size) for det in instance_dets]
+    """从 SAM3 detection 列表解码各实例 bool mask，``image_size`` 为 (W, H)。
+
+    默认对各实例做边界腐蚀，与 ``write_genpose_mask_exr_from_ism`` 后处理一致。
+    """
+    masks = [_decode_detection_mask(det, image_size) for det in instance_dets]
+    if edge_erode_px > 0:
+        masks = [erode_bool_mask(m, edge_erode_px) for m in masks]
+    return masks
 
 
 def run_sam3_segmentation(

@@ -334,6 +334,7 @@ bash start.sh start    # http://0.0.0.0:18090/ ；日志 logs/ui.log
 |------|------|
 | SAM3 分割 | 外部 SAM3 HTTP 文本分割 + 实例点云 GLB |
 | SAM3 + GenPose2 | SAM3 → GenPose2 6D 位姿；提示词可手写，或由 VLM（`config/conf.json` → `vlm`）根据 RGB + 商品中文名生成 |
+| 缺货商品位姿估计 | 手填/VLM 识别缺货商品名 → SAM3 提示词 → SAM3 → GenPose2 |
 
-依赖外部 SAM3 服务（默认 `http://127.0.0.1:18003/infer`）。VLM 默认 `POST /v1/chat/completions`（见 `vlm.api_url` / `vlm.model`）。HTTP API 仍见上文第 9 节与 `doc/接口文档.md`。
+依赖外部 SAM3 服务（默认 `http://127.0.0.1:18003/infer`）。VLM 默认 `POST /v1/chat/completions`（见 `vlm.api_url` / `vlm.model` / `vlm.missing_prompt`）。UI 默认开启 **Depth→RGB 对齐**（修正 RGB-D 像素偏差）。HTTP API 仍见上文第 9 节与 `doc/接口文档.md`。
 

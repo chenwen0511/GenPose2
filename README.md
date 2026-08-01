@@ -208,6 +208,7 @@ If you find our work useful in your research, please consider citing:
 |------|------|
 | **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
 | **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / `poses.json` / 坐标轴 GLB；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
+| **缺货商品位姿估计** | 手填或 VLM 识别缺货商品名 → 生成 SAM3 提示词 → SAM3 → GenPose2 |
 
 ```bash
 # 依赖已含在 requirements.txt（gradio、trimesh 等）
@@ -217,9 +218,11 @@ bash start.sh start|stop|restart|status
 # 日志: logs/ui.log
 ```
 
-配置：`config/conf.json`（`sam3` API、`vlm` 多模态提示词、`genpose2` 三网权重）。产物：`output/ui_runs/`。
+配置：`config/conf.json`（`sam3` API、`vlm` 多模态/缺货提示词、`genpose2` 三网权重）。产物：`output/ui_runs/`。
 
-**SAM3 + GenPose2 提示词**：可手写；或填「商品中文名」后点「生成提示词」/勾选「运行前由大模型生成」。VLM 默认 `POST` `config/conf.json` → `vlm.api_url`（模型 `qwen3-vl-4b`），实现见 `scripts/vlm_prompt.py`。
+**提示词 / VLM**：SAM3+GenPose2 可手写或由 VLM 生成；缺货页默认提示词见 `vlm.missing_prompt`。实现见 `scripts/vlm_prompt.py`。
+
+**Depth→RGB 对齐**：UI 默认开启，将 Depth warp 到 RGB 网格后再推理/叠加，修正 RGB-D 横向偏差（历史 `dx=-45` 约定会转为 Depth 右移 45）；也可用 `camera.json` 的 `depth_to_rgb_shift` / `rgb_shift`。
 
 ## 📮 Contact
 

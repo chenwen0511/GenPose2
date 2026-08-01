@@ -1,4 +1,4 @@
-"""Gradio UI entry: SAM3 分割 / SAM3+GenPose2（风格对齐 graspnet-baseline）。"""
+"""Gradio UI entry: SAM3 分割 / SAM3+GenPose2 / 缺货商品位姿估计。"""
 
 from __future__ import annotations
 
@@ -31,18 +31,21 @@ def _parse_ui_args(argv: list[str] | None = None):
 def build_app():
     import gradio as gr
     from ui.genpose_tab import build_sam3_genpose_tab
+    from ui.misplaced_tab import build_misplaced_tab
     from ui.sam3_tab import build_sam3_tab
 
     with gr.Blocks(title="GenPose2") as demo:
         gr.Markdown("# GenPose2")
         gr.Markdown(
-            "页签1：**SAM3 分割**（mask / bbox / 实例点云 GLB）；"
-            "页签2：**SAM3 + GenPose2**（6D 位姿 + 点云叠坐标轴）。"
+            "页签1：**SAM3 分割**；"
+            "页签2：**SAM3 + GenPose2**；"
+            "页签3：**缺货商品位姿估计**（手填/识别商品名 → SAM3 → GenPose2）。"
             "外部依赖见 `config/conf.json`。"
         )
         with gr.Tabs():
             build_sam3_tab()
             build_sam3_genpose_tab()
+            build_misplaced_tab()
     return demo
 
 

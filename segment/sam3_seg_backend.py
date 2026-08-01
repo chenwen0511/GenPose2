@@ -43,6 +43,26 @@ from segment.yolo_seg_backend import save_genpose2_mask_exr
 
 _COCOMASK = None
 
+# SAM3 实例 mask 后处理：各实例边界向内收缩的像素数
+DEFAULT_INSTANCE_EDGE_ERODE_PX = 2
+
+
+def erode_instance_id_map(
+    id_map: np.ndarray,
+    pixels: int = DEFAULT_INSTANCE_EDGE_ERODE_PX,
+) -> np.ndarray:
+    """对实例 id 图中每个实例独立腐蚀边界，背景保持 0。"""
+    if pixels <= 0:
+        return id_map
+    src = np.asarray(id_map)
+    out = np.zeros_like(src)
+    kernel = np.ones((3, 3), np.uint8)
+    for inst_id in sorted(int(v) for v in np.unique(src) if int(v) > 0):
+        region = (src == inst_id).astype(np.uint8)
+        eroded = cv2.erode(region, kernel, iterations=int(pixels))
+        out[eroded > 0] = inst_id
+    return out
+
 
 def _cocomask():
     """延迟加载 pycocotools（genpose2 环境需 ``pip install pycocotools``）。"""
@@ -359,11 +379,37 @@ def write_genpose_mask_exr_from_ism(
     if not np.any(composite > 0):
         raise RuntimeError(f"no foreground pixels in mask from {ism_json_path}")
 
+    # 后处理：每个实例去掉边缘 2 像素；腐蚀后为空的实例丢弃并重排 id
+    eroded = erode_instance_id_map(composite, DEFAULT_INSTANCE_EDGE_ERODE_PX)
+    alive = {int(v) for v in np.unique(eroded) if int(v) > 0}
+    if not alive:
+        raise RuntimeError(
+            f"instance edge erode ({DEFAULT_INSTANCE_EDGE_ERODE_PX}px) removed all foreground "
+            f"from {ism_json_path}"
+        )
+    new_composite = np.zeros_like(eroded)
+    new_scores: List[float] = []
+    new_dets: List[Dict[str, Any]] = []
+    new_id = 1
+    for old_id, score, det in zip(
+        range(1, len(instance_scores) + 1), instance_scores, instance_dets
+    ):
+        if old_id not in alive:
+            continue
+        new_composite[eroded == old_id] = np.uint8(new_id)
+        new_scores.append(score)
+        new_dets.append(det)
+        new_id += 1
+    composite = new_composite
+    instance_scores = new_scores
+    instance_dets = new_dets
+
     num_instances = len(instance_scores)
     save_genpose2_mask_exr(composite, mask_exr_path)
     print(
         f"[sam3_seg_backend] mask.exr -> {mask_exr_path} "
-        f"(instances={num_instances}/{len(dets)} ism dets, best_score={best_score:.4f})"
+        f"(instances={num_instances}/{len(dets)} ism dets, "
+        f"edge_erode_px={DEFAULT_INSTANCE_EDGE_ERODE_PX}, best_score={best_score:.4f})"
     )
     return best_score, num_instances, instance_scores, instance_dets
 

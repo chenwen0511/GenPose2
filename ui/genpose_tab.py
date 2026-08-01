@@ -29,7 +29,7 @@ from ui.common import (  # noqa: E402
     load_camera_json_full,
     load_depth_mm,
     render_mask_bbox_previews,
-    shift_rgb_xy,
+    resolve_rgb_depth_alignment,
 )
 from ui.genpose_runner import (  # noqa: E402
     build_poses_payload,
@@ -162,6 +162,7 @@ def run_sam3_genpose_tab(
     max_points: float,
     rgb_shift_x: float = -45.0,
     rgb_shift_y: float = 0.0,
+    enable_depth_align: bool = True,
     enable_workspace_outlier: bool = True,
     max_depth_mm: float = 2500,
     min_depth_mm: float = 50,
@@ -223,20 +224,17 @@ def run_sam3_genpose_tab(
             )
 
         color_np = np.asarray(rgb, dtype=np.uint8)
-        rgb_shift_meta: Dict[str, Any] = {"dx": 0, "dy": 0, "source": "none"}
-        cam_rgb_shift = camera_meta.get("rgb_shift") or camera_meta.get("color_shift")
-        if isinstance(cam_rgb_shift, (list, tuple)) and len(cam_rgb_shift) == 2:
-            sx, sy = int(cam_rgb_shift[0]), int(cam_rgb_shift[1])
-            rgb_shift_meta = {"dx": sx, "dy": sy, "source": "camera.json"}
-        else:
-            sx = int(round(float(rgb_shift_x or 0)))
-            sy = int(round(float(rgb_shift_y or 0)))
-            rgb_shift_meta = {"dx": sx, "dy": sy, "source": "ui"}
-        color_for_cloud = color_np
-        if rgb_shift_meta["dx"] != 0 or rgb_shift_meta["dy"] != 0:
-            color_for_cloud = shift_rgb_xy(
-                color_np, int(rgb_shift_meta["dx"]), int(rgb_shift_meta["dy"])
-            )
+        depth_mm, color_for_cloud, align_meta = resolve_rgb_depth_alignment(
+            depth_mm,
+            color_np,
+            camera_meta,
+            ui_rgb_shift_x=float(rgb_shift_x or 0),
+            ui_rgb_shift_y=float(rgb_shift_y or 0),
+            enable_depth_align=bool(enable_depth_align),
+            auto_if_zero=False,
+        )
+        rgb_shift_meta = dict(align_meta.get("rgb_shift") or {})
+        depth_align_meta = dict(align_meta.get("depth_align") or {})
 
         workspace_stats: Dict[str, Any] = {"enabled": False}
         if bool(enable_workspace_outlier):
@@ -404,6 +402,7 @@ def run_sam3_genpose_tab(
             },
             "pose_overlay": str(pose_overlay_path),
             "rgb_shift": rgb_shift_meta,
+            "depth_align": depth_align_meta,
             "sam3_api": sam3_seg.DEFAULT_SAM3_API_URL,
             "prompt": prompt_text,
             "vlm_prompt": vlm_meta,
@@ -453,14 +452,18 @@ def build_sam3_genpose_tab() -> None:
                         type="filepath",
                         file_types=[".json"],
                     )
+                enable_depth_align = gr.Checkbox(
+                    label="对齐 Depth→RGB（推荐：修正像素/3D 偏差；开启后 dx/dy 用于几何对齐）",
+                    value=True,
+                )
                 with gr.Row():
                     rgb_shift_x = gr.Number(
-                        label="点云上色：RGB 右移 dx（像素，+右）",
+                        label="RGB↔Depth 偏移 dx（历史上色约定：+右；默认 -45→Depth 右移 45）",
                         value=-45,
                         precision=0,
                     )
                     rgb_shift_y = gr.Number(
-                        label="点云上色：RGB 下移 dy（像素，+下）",
+                        label="RGB↔Depth 偏移 dy（+下）",
                         value=0,
                         precision=0,
                     )
@@ -469,6 +472,23 @@ def build_sam3_genpose_tab() -> None:
                     placeholder="例如：白色塑料托盘",
                     lines=1,
                 )
+                vlm_api = gr.Textbox(
+                    label="VLM API URL（chat/completions）",
+                    value=str(vlm_cfg.get("api_url") or DEFAULT_VLM_API_URL),
+                    lines=1,
+                )
+                with gr.Row():
+                    vlm_model = gr.Textbox(
+                        label="VLM 模型名",
+                        value=str(vlm_cfg.get("model") or DEFAULT_VLM_MODEL),
+                        scale=3,
+                    )
+                    vlm_timeout = gr.Number(
+                        label="VLM 超时（秒）",
+                        value=float(vlm_cfg.get("timeout_s", DEFAULT_VLM_TIMEOUT_S)),
+                        precision=0,
+                        scale=1,
+                    )
                 with gr.Row():
                     use_vlm_prompt = gr.Checkbox(
                         label="运行前由大模型生成提示词",
@@ -481,20 +501,6 @@ def build_sam3_genpose_tab() -> None:
                     lines=3,
                 )
                 vlm_status = gr.Textbox(label="提示词生成状态", interactive=False, lines=1)
-                with gr.Accordion("大模型（VLM）参数", open=False):
-                    vlm_api = gr.Textbox(
-                        label="VLM API URL",
-                        value=str(vlm_cfg.get("api_url") or DEFAULT_VLM_API_URL),
-                    )
-                    vlm_model = gr.Textbox(
-                        label="VLM 模型名",
-                        value=str(vlm_cfg.get("model") or DEFAULT_VLM_MODEL),
-                    )
-                    vlm_timeout = gr.Number(
-                        label="VLM 超时（秒）",
-                        value=float(vlm_cfg.get("timeout_s", DEFAULT_VLM_TIMEOUT_S)),
-                        precision=0,
-                    )
                 with gr.Accordion("SAM3 推理参数", open=False):
                     api = gr.Textbox(
                         label="SAM3 API URL",
@@ -626,6 +632,7 @@ def build_sam3_genpose_tab() -> None:
                 max_pts,
                 rgb_shift_x,
                 rgb_shift_y,
+                enable_depth_align,
                 enable_workspace,
                 max_depth,
                 min_depth,
@@ -652,12 +659,13 @@ def build_sam3_genpose_tab() -> None:
             """
             **说明**
             - **提示词**：可手写；或填「商品中文名」后点「生成提示词」/勾选「运行前由大模型生成」
-            - **VLM**：`POST /v1/chat/completions`（传 RGB + 指令），默认 `qwen3-vl-4b`
+            - **VLM**：界面可改 API URL / 模型名；`POST /v1/chat/completions`（传 RGB + 指令），默认见 `config/conf.json` → `vlm`
             - **SAM3**：外部 HTTP `POST /infer`（`image_base64`），生成实例 mask
+            - **Depth→RGB 对齐**：默认开启。将 Depth warp 到 RGB 网格后再做 GenPose2 / 2D 叠加，消除横向偏差；`dx=-45` 表示历史 RGB 上色偏移，对齐时 Depth 使用 `+45`
+            - **camera.json**：可用 `depth_to_rgb_shift:[dx,dy]`（Depth 平移），或沿用 `rgb_shift:[dx,dy]`（按上色约定取反）
             - **离群点剔除**：先 **全局**（深度范围+SOR），再 **按实例**（MAD+SOR），清洗后再送 GenPose2
             - **GenPose2**：ScoreNet → EnergyNet → ScaleNet，估计 6D 位姿与 3D 尺寸（无需 CAD）
             - **poses.json**：`xyz_mm` + ZYX 欧拉角（rad）+ `size_3d`（米），相机系
-            - **点云 RGB 偏移**：仅影响 GLB 上色（默认 dx=-45）；也可用 `camera.json` 的 `rgb_shift:[dx,dy]`。不影响 SAM3 / GenPose2 / 2D 叠加图
             - **运行产物**：`output/ui_runs/<时间戳>/pose_*/`
             - 首次运行会加载三网权重，耗时较长；之后复用缓存
             """

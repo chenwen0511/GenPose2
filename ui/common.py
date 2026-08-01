@@ -283,6 +283,98 @@ def align_depth_to_rgb(
     return aligned, stats
 
 
+def resolve_rgb_depth_alignment(
+    depth_mm: np.ndarray,
+    rgb: np.ndarray,
+    camera_meta: Dict[str, Any],
+    *,
+    ui_rgb_shift_x: float = 0.0,
+    ui_rgb_shift_y: float = 0.0,
+    enable_depth_align: bool = True,
+    auto_if_zero: bool = False,
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+    """
+    Prepare depth + cloud-color for RGB-D pipelines.
+
+    When ``enable_depth_align`` is True (recommended):
+      - Warp **depth → RGB** so SAM3 mask / GenPose2 / 2D overlay share ``(u,v)``.
+      - ``camera.json`` ``depth_to_rgb_shift`` / ``depth_shift`` used as-is for depth warp.
+      - Else ``rgb_shift`` / ``color_shift`` / UI dx,dy are treated as *RGB coloring*
+        convention (historical ``dx=-45``): depth warp uses ``(-dx, -dy)``.
+      - After geometric align, cloud color uses **unshifted** RGB.
+
+    When False: keep legacy behavior (only shift RGB/id for GLB coloring).
+
+    Returns:
+      ``(depth_mm_out, color_for_cloud, meta)``
+    """
+    color_np = np.asarray(rgb)
+    if color_np.ndim == 2:
+        color_for_cloud = color_np
+    else:
+        color_for_cloud = color_np.copy()
+
+    cam_depth_shift = camera_meta.get("depth_to_rgb_shift") or camera_meta.get(
+        "depth_shift"
+    )
+    cam_rgb_shift = camera_meta.get("rgb_shift") or camera_meta.get("color_shift")
+    if isinstance(cam_rgb_shift, (list, tuple)) and len(cam_rgb_shift) == 2:
+        sx, sy = int(cam_rgb_shift[0]), int(cam_rgb_shift[1])
+        rgb_src = "camera.json:rgb_shift"
+    else:
+        sx = int(round(float(ui_rgb_shift_x or 0)))
+        sy = int(round(float(ui_rgb_shift_y or 0)))
+        rgb_src = "ui"
+
+    if not bool(enable_depth_align):
+        meta: Dict[str, Any] = {
+            "depth_align": {"enabled": False},
+            "rgb_shift": {"dx": sx, "dy": sy, "source": rgb_src, "applied_to": "color"},
+        }
+        if sx != 0 or sy != 0:
+            color_for_cloud = shift_rgb_xy(color_for_cloud, sx, sy)
+        return np.asarray(depth_mm), color_for_cloud, meta
+
+    if isinstance(cam_depth_shift, (list, tuple)) and len(cam_depth_shift) == 2:
+        d_shift: Optional[Tuple[int, int]] = (
+            int(cam_depth_shift[0]),
+            int(cam_depth_shift[1]),
+        )
+        method = "camera.json:depth_to_rgb_shift"
+        auto = False
+    elif sx != 0 or sy != 0:
+        # Historical UI: shift RGB by (sx,sy) for coloring ⇔ warp depth by (-sx,-sy)
+        d_shift = (-sx, -sy)
+        method = f"{rgb_src}->depth_inverse"
+        auto = False
+    elif auto_if_zero:
+        d_shift = None
+        method = "auto_edge"
+        auto = True
+    else:
+        d_shift = (0, 0)
+        method = "none"
+        auto = False
+
+    aligned, align_stats = align_depth_to_rgb(
+        depth_mm, color_np, shift_xy=d_shift, auto=auto
+    )
+    align_stats = dict(align_stats)
+    align_stats["method_resolved"] = method
+    meta = {
+        "depth_align": align_stats,
+        "rgb_shift": {
+            "dx": 0,
+            "dy": 0,
+            "source": "aligned",
+            "applied_to": "none",
+            "legacy_rgb_shift_input": {"dx": sx, "dy": sy, "source": rgb_src},
+        },
+    }
+    # Geometry aligned: color and depth share RGB grid — no extra color warp
+    return aligned, color_for_cloud, meta
+
+
 def depth_to_colormap(depth_mm: np.ndarray) -> Image.Image:
     depth = np.asarray(depth_mm)
     valid = depth > 0
@@ -304,6 +396,17 @@ def vis_colors_rgb() -> List[Tuple[int, int, int]]:
     return [(int(r), int(g), int(b)) for (b, g, r) in VIS_COLORS_BGR]
 
 
+def erode_bool_mask(mask: np.ndarray, pixels: int = 2) -> np.ndarray:
+    """二值/bool mask 边界腐蚀 ``pixels`` 像素（与 SAM3 实例后处理一致）。"""
+    if pixels <= 0:
+        return mask
+    region = (np.asarray(mask) > 0).astype(np.uint8)
+    eroded = cv2.erode(region, np.ones((3, 3), np.uint8), iterations=int(pixels))
+    if mask.dtype == bool:
+        return eroded.astype(bool)
+    return eroded
+
+
 def render_mask_bbox_previews(
     image: Image.Image,
     instance_dets: List[Dict[str, Any]],
@@ -311,6 +414,7 @@ def render_mask_bbox_previews(
     *,
     prompt: str = "obj",
     mask_alpha: float = 0.5,
+    edge_erode_px: int = 2,
 ) -> Tuple[Image.Image, Image.Image]:
     """Return (mask-only overlay, bbox-only overlay) as RGB PIL images."""
     rgb = np.array(image.convert("RGB"))
@@ -324,6 +428,7 @@ def render_mask_bbox_previews(
 
     for idx, det in enumerate(instance_dets):
         mask = decode_mask_fn(det, image_size)
+        mask = erode_bool_mask(mask, edge_erode_px)
         color = VIS_COLORS_BGR[idx % len(VIS_COLORS_BGR)]
         color_arr = np.array(color, dtype=np.float32)
         mask_overlay[mask] = mask_alpha * color_arr + (1.0 - mask_alpha) * mask_overlay[mask]
