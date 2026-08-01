@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 import logging
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from ui.common import _project_point_m
 from ui.genpose_runner import (
@@ -33,6 +34,77 @@ logger = logging.getLogger("place_missing")
 # 目的位姿显眼色（RGB）
 DEST_CLOUD_RGB = (255, 32, 255)  # 品红
 DEST_OVERLAY_BGR = (255, 0, 255)  # magenta in BGR for OpenCV draw
+
+_CJK_FONT_CANDIDATES = (
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Medium.ttc",
+    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+    "/usr/share/fonts/truetype/arphic/uming.ttc",
+)
+
+
+@lru_cache(maxsize=8)
+def _load_cjk_font(size: int) -> ImageFont.ImageFont:
+    for path in _CJK_FONT_CANDIDATES:
+        if Path(path).is_file():
+            try:
+                return ImageFont.truetype(path, size=size, index=0)
+            except Exception:  # noqa: BLE001
+                continue
+    return ImageFont.load_default()
+
+
+def _needs_cjk(text: str) -> bool:
+    return any(ord(ch) > 127 for ch in (text or ""))
+
+
+def put_text_bgr(
+    bgr: np.ndarray,
+    text: str,
+    org: Tuple[int, int],
+    color_bgr: Tuple[int, int, int],
+    *,
+    font_scale: float = 0.65,
+    thickness: int = 2,
+) -> None:
+    """绘制标签；含中文时用 Noto CJK，避免 OpenCV 显示为 ???。"""
+    text = str(text or "")
+    if not text:
+        return
+    x, y = int(org[0]), int(org[1])
+    if not _needs_cjk(text):
+        cv2.putText(
+            bgr,
+            text,
+            (x, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            float(font_scale),
+            color_bgr,
+            int(thickness),
+            cv2.LINE_AA,
+        )
+        return
+
+    # PIL: org 为文字基线附近左下；转为左上绘制
+    font_px = max(14, int(round(32 * float(font_scale))))
+    font = _load_cjk_font(font_px)
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    pil = Image.fromarray(rgb)
+    draw = ImageDraw.Draw(pil)
+    # 估算高度，把基线 y 转为顶边
+    try:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        th = int(bbox[3] - bbox[1])
+    except Exception:  # noqa: BLE001
+        th = font_px
+    top_left = (x, max(0, y - th))
+    color_rgb = (int(color_bgr[2]), int(color_bgr[1]), int(color_bgr[0]))
+    # 描边，提高可读性
+    for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1)):
+        draw.text((top_left[0] + dx, top_left[1] + dy), text, font=font, fill=(0, 0, 0))
+    draw.text(top_left, text, font=font, fill=color_rgb)
+    bgr[:, :, :] = cv2.cvtColor(np.asarray(pil), cv2.COLOR_RGB2BGR)
+
 
 # 多实例 mask 调色板（BGR）
 _INSTANCE_COLORS_BGR = (
@@ -473,26 +545,22 @@ def annotate_instances_for_vlm(
                 label = f"id={iid}"
                 if len(xyz) >= 3:
                     label += f" z={float(xyz[2]):.0f}"
-                cv2.putText(
+                put_text_bgr(
                     bgr,
                     label,
                     (p0[0] + 8, max(18, p0[1] - 8)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.65,
                     color,
-                    2,
-                    cv2.LINE_AA,
+                    font_scale=0.65,
+                    thickness=2,
                 )
 
-    cv2.putText(
+    put_text_bgr(
         bgr,
-        f"{product_name}: choose instance_id + move",
+        f"{product_name}: 选择 instance_id + 移动",
         (12, 28),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.75,
         (255, 255, 255),
-        2,
-        cv2.LINE_AA,
+        font_scale=0.75,
+        thickness=2,
     )
     return Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
 
@@ -521,15 +589,13 @@ def render_destination_overlay(
         if p0 is None:
             return
         cv2.circle(bgr, p0, 7 if thickness > 2 else 4, color_bgr, -1, cv2.LINE_AA)
-        cv2.putText(
+        put_text_bgr(
             bgr,
             tag,
             (p0[0] + 8, max(16, p0[1] - 8)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
             color_bgr,
-            2,
-            cv2.LINE_AA,
+            font_scale=0.65,
+            thickness=2,
         )
         axis_colors = ((0, 0, 255), (0, 255, 0), (255, 0, 0))
         for i, ac in enumerate(axis_colors):
@@ -763,7 +829,7 @@ def run_place_missing_stage(
         dest_pose=dest_pose,
         size_3d=size_3d,
         intrinsic=intrinsic,
-        label=f"dest:{product_name}",
+        label=f"dest:{product_name or 'place'}",
     )
     overlay_path = run_dir / "vis_place_dest.png"
     overlay.save(overlay_path)
