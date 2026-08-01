@@ -208,7 +208,7 @@ If you find our work useful in your research, please consider citing:
 |------|------|
 | **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
 | **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / `poses.json` / 坐标轴 GLB；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
-| **缺货商品位姿估计** | 手填或 VLM 识别缺货商品名 → 生成 SAM3 提示词 → SAM3 → GenPose2 |
+| **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2 → 空间先验+M3 选型/位移 → 目的 6D（品红 GLB） |
 
 ```bash
 # 依赖已含在 requirements.txt（gradio、trimesh 等）
@@ -218,9 +218,14 @@ bash start.sh start|stop|restart|status
 # 日志: logs/ui.log
 ```
 
-配置：`config/conf.json`（`sam3` API、`vlm` 多模态/缺货提示词、`genpose2` 三网权重）。产物：`output/ui_runs/`。
+配置：`config/conf.json`（`sam3` API、双 VLM profile、`genpose2` 三网权重）。产物：`output/ui_runs/`（含 `place_destination.json`）。
 
-**提示词 / VLM**：SAM3+GenPose2 可手写或由 VLM 生成；缺货页默认提示词见 `vlm.missing_prompt`。实现见 `scripts/vlm_prompt.py`。
+**提示词 / VLM**（`scripts/vlm_prompt.py`）：
+- `vlm.sam3_prompt`：本地 **qwen3-vl-4b**（OpenAI `chat/completions`）生成 SAM3 提示词
+- `vlm.reason`：**MiniMax-M3**（Anthropic 兼容）做缺货识别与放置位移；Key 用 `ANTHROPIC_API_KEY` 或 `config/secrets.local.json`（已 gitignore）
+- 缺货识别默认文案：`vlm.missing_prompt`
+
+**放置目的位姿**：把同款实例 mask + `xyz_mm` 与识别对话喂给 M3；并用列/前排深度空间先验校正「飞出货架」的位移。实现见 `ui/place_missing.py`。
 
 **Depth→RGB 对齐**：UI 默认开启，将 Depth warp 到 RGB 网格后再推理/叠加，修正 RGB-D 横向偏差（历史 `dx=-45` 约定会转为 Depth 右移 45）；也可用 `camera.json` 的 `depth_to_rgb_shift` / `rgb_shift`。
 

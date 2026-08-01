@@ -19,7 +19,12 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from config import get_genpose2_conf, get_sam3_conf, get_vlm_conf, resolve_repo_path  # noqa: E402
+from config import (  # noqa: E402
+    get_genpose2_conf,
+    get_sam3_conf,
+    get_vlm_profile,
+    resolve_repo_path,
+)
 from ui.common import (  # noqa: E402
     clean_instance_id_map,
     clean_workspace_mask,
@@ -51,9 +56,9 @@ from scripts.sam3_seg import (  # noqa: E402
 )
 from scripts import sam3_seg  # noqa: E402
 from scripts.vlm_prompt import (  # noqa: E402
-    DEFAULT_VLM_API_URL,
-    DEFAULT_VLM_MODEL,
-    DEFAULT_VLM_TIMEOUT_S,
+    DEFAULT_SAM3_VLM_API_URL,
+    DEFAULT_SAM3_VLM_MODEL,
+    DEFAULT_SAM3_VLM_TIMEOUT_S,
     generate_sam3_prompt_from_image,
 )
 
@@ -131,9 +136,9 @@ def generate_prompt_ui(
         prompt = generate_sam3_prompt_from_image(
             rgb_img.convert("RGB"),
             name,
-            api_url=(vlm_api_url or DEFAULT_VLM_API_URL).strip(),
-            model=(vlm_model or DEFAULT_VLM_MODEL).strip(),
-            timeout_s=float(vlm_timeout_s or DEFAULT_VLM_TIMEOUT_S),
+            api_url=(vlm_api_url or DEFAULT_SAM3_VLM_API_URL).strip(),
+            model=(vlm_model or DEFAULT_SAM3_VLM_MODEL).strip(),
+            timeout_s=float(vlm_timeout_s or DEFAULT_SAM3_VLM_TIMEOUT_S),
         )
         return prompt, f"已生成提示词：{prompt}"
     except Exception as exc:  # noqa: BLE001
@@ -201,16 +206,16 @@ def run_sam3_genpose_tab(
             prompt_text = generate_sam3_prompt_from_image(
                 rgb,
                 name,
-                api_url=(vlm_api_url or DEFAULT_VLM_API_URL).strip(),
-                model=(vlm_model or DEFAULT_VLM_MODEL).strip(),
-                timeout_s=float(vlm_timeout_s or DEFAULT_VLM_TIMEOUT_S),
+                api_url=(vlm_api_url or DEFAULT_SAM3_VLM_API_URL).strip(),
+                model=(vlm_model or DEFAULT_SAM3_VLM_MODEL).strip(),
+                timeout_s=float(vlm_timeout_s or DEFAULT_SAM3_VLM_TIMEOUT_S),
             )
             vlm_meta = {
                 "enabled": True,
                 "chinese_name": name,
                 "prompt": prompt_text,
-                "api_url": (vlm_api_url or DEFAULT_VLM_API_URL).strip(),
-                "model": (vlm_model or DEFAULT_VLM_MODEL).strip(),
+                "api_url": (vlm_api_url or DEFAULT_SAM3_VLM_API_URL).strip(),
+                "model": (vlm_model or DEFAULT_SAM3_VLM_MODEL).strip(),
                 "elapsed_s": round(time.perf_counter() - t_vlm, 3),
             }
         else:
@@ -380,6 +385,20 @@ def run_sam3_genpose_tab(
         (run_dir / "detection_pem.json").write_text(
             json.dumps(detections_pem, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        # 供缺货放置等后续阶段复用
+        np.save(run_dir / "depth_mm.npy", depth_mm)
+        np.save(run_dir / "mask_u8.npy", mask_u8)
+        (run_dir / "intrinsic.json").write_text(
+            json.dumps(
+                {
+                    "intrinsic": np.asarray(intrinsic, dtype=float).reshape(3, 3).tolist(),
+                    "factor_depth": float(factor_depth),
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
         detail = {
             "success": True,
@@ -431,7 +450,7 @@ def run_sam3_genpose_tab(
 def build_sam3_genpose_tab() -> None:
     sam3_cfg = get_sam3_conf()
     gp_cfg = get_genpose2_conf()
-    vlm_cfg = get_vlm_conf()
+    vlm_cfg = get_vlm_profile("sam3_prompt")
     with gr.Tab("SAM3 + GenPose2"):
         gr.Markdown(
             "流水线：**SAM3 文本分割 → GenPose2 6D 位姿估计**。"
@@ -473,19 +492,19 @@ def build_sam3_genpose_tab() -> None:
                     lines=1,
                 )
                 vlm_api = gr.Textbox(
-                    label="VLM API URL（chat/completions）",
-                    value=str(vlm_cfg.get("api_url") or DEFAULT_VLM_API_URL),
+                    label="SAM3 提示词 VLM URL（qwen3-vl / chat/completions）",
+                    value=str(vlm_cfg.get("api_url") or DEFAULT_SAM3_VLM_API_URL),
                     lines=1,
                 )
                 with gr.Row():
                     vlm_model = gr.Textbox(
-                        label="VLM 模型名",
-                        value=str(vlm_cfg.get("model") or DEFAULT_VLM_MODEL),
+                        label="SAM3 提示词模型（默认 qwen3-vl-4b）",
+                        value=str(vlm_cfg.get("model") or DEFAULT_SAM3_VLM_MODEL),
                         scale=3,
                     )
                     vlm_timeout = gr.Number(
                         label="VLM 超时（秒）",
-                        value=float(vlm_cfg.get("timeout_s", DEFAULT_VLM_TIMEOUT_S)),
+                        value=float(vlm_cfg.get("timeout_s", DEFAULT_SAM3_VLM_TIMEOUT_S)),
                         precision=0,
                         scale=1,
                     )

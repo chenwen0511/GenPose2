@@ -189,7 +189,7 @@ bash start.sh stop
 # 日志: logs/ui.log
 ```
 
-页签：**SAM3 分割**；**SAM3 + GenPose2**；**缺货商品位姿估计**（手填/识别商品名 → SAM3 → GenPose2）。VLM / 缺货提示词见 `conf.json` → `vlm`；默认开启 Depth→RGB 对齐。启动时在主线程预加载三网权重。
+页签：**SAM3 分割**；**SAM3 + GenPose2**；**缺货商品位姿估计**（M3 识别缺货 → qwen 生成 SAM3 提示词 → SAM3 → GenPose2 → M3+空间先验估计目的位姿）。`conf.json` → `vlm.sam3_prompt` / `vlm.reason` / `vlm.missing_prompt`；MiniMax Key 放 `ANTHROPIC_API_KEY` 或 `config/secrets.local.json`（勿提交仓库）。默认开启 Depth→RGB 对齐。启动时在主线程预加载三网权重。
 ### 6.4 systemd（生产环境，可选）
 
 创建 `/etc/systemd/system/genpose2.service`（按实际用户与路径修改）：
@@ -324,7 +324,7 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 | 文档 | 内容 |
 |------|------|
 | `README.md` | 项目总览、Gradio UI、训练环境说明 |
-| `config/conf.json` | UI / SAM3 API / VLM（含 `missing_prompt`）/ GenPose2 权重默认配置 |
+| `config/conf.json` | UI / SAM3 API / 双 VLM profile（`sam3_prompt`+`reason`）/ GenPose2 权重默认配置 |
 | `learning/infer.md` | 离线推理与 HTTP 说明 |
 | `learning/如何补救.md` | depth / mask 质量与补救 |
 | `learning/案例分析1.md` | 深度丢失案例 |
