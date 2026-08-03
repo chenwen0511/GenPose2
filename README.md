@@ -207,7 +207,7 @@ If you find our work useful in your research, please consider citing:
 | 页签 | 功能 |
 |------|------|
 | **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
-| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / `poses.json` / 坐标轴 GLB；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
+| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / 抓取位姿框（`xyzrxryrz` mm/° + 目标正方体）/ `poses.json` / `grasp_pose.json` / 坐标轴 GLB；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
 | **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2 → 空间先验+M3 选型/位移 → 目的 6D（品红 GLB） |
 
 ```bash
@@ -218,7 +218,9 @@ bash start.sh start|stop|restart|status
 # 日志: logs/ui.log
 ```
 
-配置：`config/conf.json`（`sam3` API、双 VLM profile、`genpose2` 三网权重）。产物：`output/ui_runs/`（含 `place_destination.json`）。
+配置：`config/conf.json`（`sam3` API、双 VLM profile、`genpose2` 三网权重）。产物：`output/ui_runs/`（含 `grasp_pose.json`、`place_destination.json`）。
+
+**抓取位姿展示**（SAM3 + GenPose2 页签）：对齐 Gen6D 摘取点格式，左侧 JSON 框输出 `xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），并含目标空间正方体 `size_3d` / `size_3d_mm` / 8 角点 `corners_mm`；同内容写入运行目录 `grasp_pose.json`。
 
 **提示词 / VLM**（`scripts/vlm_prompt.py`）：
 - `vlm.sam3_prompt`：本地 **qwen3-vl-4b**（OpenAI `chat/completions`）生成 SAM3 提示词

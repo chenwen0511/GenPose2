@@ -58,6 +58,140 @@ def _pose_4x4_to_t_and_R(pose_4x4: np.ndarray) -> Tuple[List[float], List[List[f
     return t_mm, rot
 
 
+def _cube_corners_mm(
+    position_mm: Any,
+    rotation_3x3: Any,
+    size_3d_m: Any,
+) -> List[List[float]]:
+    """目标空间正方体（包围盒）8 角点，相机系，单位 mm。"""
+    pos = np.asarray(position_mm, dtype=np.float64).reshape(3)
+    rot = np.asarray(rotation_3x3, dtype=np.float64).reshape(3, 3)
+    size = np.asarray(size_3d_m, dtype=np.float64).reshape(3)
+    hx, hy, hz = 0.5 * size * 1000.0
+    local = np.array(
+        [
+            [-hx, -hy, -hz],
+            [hx, -hy, -hz],
+            [hx, hy, -hz],
+            [-hx, hy, -hz],
+            [-hx, -hy, hz],
+            [hx, -hy, hz],
+            [hx, hy, hz],
+            [-hx, hy, hz],
+        ],
+        dtype=np.float64,
+    )
+    corners = (rot @ local.T).T + pos.reshape(1, 3)
+    return [[round(float(v), 2) for v in row] for row in corners]
+
+
+def format_grasp_xyzrxryrz(
+    position_mm: Any,
+    rotation_3x3: Any,
+    *,
+    size_3d_m: Optional[Any] = None,
+    meta: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    抓取/物体 6D 位姿：``[x, y, z, rx, ry, rz]``（对齐 Gen6D 摘取点格式）。
+    xyz 单位 mm；rx/ry/rz 为 °（旋转矩阵按 ZYX 欧拉角换算）。
+    若提供 ``size_3d_m``，一并给出目标空间正方体尺寸与 8 角点。
+    """
+    pos = np.asarray(position_mm, dtype=np.float64).reshape(3)
+    rot = np.asarray(rotation_3x3, dtype=np.float64).reshape(3, 3)
+    euler_rad = _rotation_matrix_to_euler_zyx(rot.tolist())
+    rx = round(float(np.degrees(euler_rad[0])), 3)
+    ry = round(float(np.degrees(euler_rad[1])), 3)
+    rz = round(float(np.degrees(euler_rad[2])), 3)
+    xyz = [round(float(pos[0]), 2), round(float(pos[1]), 2), round(float(pos[2]), 2)]
+    xyzrxryrz = [xyz[0], xyz[1], xyz[2], rx, ry, rz]
+    out: Dict[str, Any] = {
+        "success": True,
+        "xyzrxryrz": xyzrxryrz,
+        "frame": "camera",
+        "preview_frame": "glb_y_up",
+        "axis_hint": "X right, Y down, Z forward (mm)",
+        "unit": {
+            "xyz": "mm",
+            "rx_ry_rz": "deg",
+            "size_3d": "m",
+            "size_3d_mm": "mm",
+            "cube_corners_mm": "mm",
+        },
+        "euler_convention": "ZYX (rz,ry,rx) → displayed as [x,y,z,rx,ry,rz]",
+        "position_mm": xyz,
+        "rpy_deg": {"rx": rx, "ry": ry, "rz": rz},
+        "rotation_matrix": [[round(float(v), 6) for v in row] for row in rot.tolist()],
+    }
+    if size_3d_m is not None:
+        size = np.asarray(size_3d_m, dtype=np.float64).reshape(3)
+        size_m = [round(float(v), 6) for v in size.tolist()]
+        size_mm = [round(float(v) * 1000.0, 2) for v in size.tolist()]
+        out["size_3d"] = size_m
+        out["size_3d_mm"] = size_mm
+        out["cube"] = {
+            "center_mm": xyz,
+            "size_m": size_m,
+            "size_mm": size_mm,
+            "corners_mm": _cube_corners_mm(xyz, rot, size),
+            "frame": "camera",
+            "note": "目标空间正方体：物体局部系 [±l/2, ±w/2, ±h/2] 变换到相机系",
+        }
+    if meta:
+        out["meta"] = meta
+    return out
+
+
+def build_grasp_display_payload(
+    poses_np: np.ndarray,
+    lengths_np: np.ndarray,
+    *,
+    instance_scores: Optional[List[float]] = None,
+) -> Dict[str, Any]:
+    """UI 展示用：首实例为主字段，全部实例列入 ``instances``（mm / ° + 正方体）。"""
+    if poses_np is None or poses_np.shape[0] == 0:
+        return {
+            "success": False,
+            "message": "尚未计算出抓取位姿",
+            "xyzrxryrz": None,
+            "cube": None,
+            "unit": {
+                "xyz": "mm",
+                "rx_ry_rz": "deg",
+                "size_3d": "m",
+                "size_3d_mm": "mm",
+                "cube_corners_mm": "mm",
+            },
+            "instances": [],
+            "num_poses": 0,
+        }
+
+    instances: List[Dict[str, Any]] = []
+    for i in range(poses_np.shape[0]):
+        t_mm, rot = _pose_4x4_to_t_and_R(poses_np[i])
+        score = (
+            float(instance_scores[i])
+            if instance_scores is not None and i < len(instance_scores)
+            else 1.0
+        )
+        entry = format_grasp_xyzrxryrz(
+            t_mm,
+            rot,
+            size_3d_m=lengths_np[i],
+            meta={
+                "instance_id": i + 1,
+                "score": score,
+                "role": "object_6d_pose",
+            },
+        )
+        instances.append(entry)
+
+    primary = dict(instances[0])
+    primary["num_poses"] = len(instances)
+    primary["instances"] = instances
+    return primary
+
+
 def camera_json_to_meta(camera: Dict[str, Any], width: int, height: int) -> Dict[str, Any]:
     if "camera" in camera and "intrinsics" in camera.get("camera", {}):
         meta = dict(camera)

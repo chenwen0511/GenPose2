@@ -37,6 +37,7 @@ from ui.common import (  # noqa: E402
     resolve_rgb_depth_alignment,
 )
 from ui.genpose_runner import (  # noqa: E402
+    build_grasp_display_payload,
     build_poses_payload,
     camera_json_to_meta,
     export_pose_scene,
@@ -72,7 +73,7 @@ if not logger.handlers:
 
 # sensor, mask, bbox, pose_overlay,
 # glb, glb_dl, ply_dl,
-# poses_json, detail_json
+# grasp_json, poses_json, detail_json
 GenPoseTabOut = Tuple[
     Optional[Image.Image],
     Optional[Image.Image],
@@ -81,6 +82,7 @@ GenPoseTabOut = Tuple[
     Optional[str],
     Optional[str],
     Optional[str],
+    str,
     str,
     str,
 ]
@@ -103,6 +105,29 @@ def _empty_poses(message: str = "尚未计算出位姿") -> str:
     )
 
 
+def _empty_grasp_json(message: str = "尚未计算出抓取位姿") -> str:
+    return json.dumps(
+        {
+            "success": False,
+            "message": message,
+            "xyzrxryrz": None,
+            "cube": None,
+            "unit": {
+                "xyz": "mm",
+                "rx_ry_rz": "deg",
+                "size_3d": "m",
+                "size_3d_mm": "mm",
+                "cube_corners_mm": "mm",
+                "euler": "ZYX → [rx,ry,rz]=[X,Y,Z]",
+            },
+            "instances": [],
+            "num_poses": 0,
+        },
+        ensure_ascii=False,
+        indent=2,
+    )
+
+
 def _error(message: str, sensor_vis: Optional[Image.Image] = None) -> GenPoseTabOut:
     logger.error("genpose_tab failed: %s", message)
     err = json.dumps({"success": False, "message": message}, ensure_ascii=False, indent=2)
@@ -114,6 +139,7 @@ def _error(message: str, sensor_vis: Optional[Image.Image] = None) -> GenPoseTab
         None,
         None,
         None,
+        _empty_grasp_json(message),
         _empty_poses(message),
         err,
     )
@@ -349,6 +375,11 @@ def run_sam3_genpose_tab(
             instance_scores=instance_scores,
             instance_bboxes=instance_bboxes,
         )
+        grasp_payload = build_grasp_display_payload(
+            poses_np,
+            lengths_np,
+            instance_scores=instance_scores,
+        )
         files = export_pose_scene(
             depth_mm=depth_mm,
             color_rgb=color_for_cloud,
@@ -364,6 +395,9 @@ def run_sam3_genpose_tab(
         poses_payload["scene_ply"] = files["ply"]
         (run_dir / "poses.json").write_text(
             json.dumps(poses_payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        (run_dir / "grasp_pose.json").write_text(
+            json.dumps(grasp_payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
         # Also write detection_pem.json (HTTP 服务风格)
@@ -417,6 +451,7 @@ def run_sam3_genpose_tab(
                 "num": int(poses_np.shape[0]),
                 "glb": files["glb"],
                 "json": str(run_dir / "poses.json"),
+                "grasp_json": str(run_dir / "grasp_pose.json"),
                 "detection_pem": str(run_dir / "detection_pem.json"),
             },
             "pose_overlay": str(pose_overlay_path),
@@ -439,6 +474,7 @@ def run_sam3_genpose_tab(
             files["glb"],
             files["glb"],
             files["ply"],
+            json.dumps(grasp_payload, ensure_ascii=False, indent=2),
             json.dumps(poses_payload, ensure_ascii=False, indent=2),
             json.dumps(detail, ensure_ascii=False, indent=2),
         )
@@ -454,7 +490,7 @@ def build_sam3_genpose_tab() -> None:
     with gr.Tab("SAM3 + GenPose2"):
         gr.Markdown(
             "流水线：**SAM3 文本分割 → GenPose2 6D 位姿估计**。"
-            "输出位姿叠加图、`poses.json`、点云 GLB（RGB 坐标轴）。"
+            "输出位姿叠加图、抓取位姿（`xyzrxryrz` mm/° + 目标正方体）、`poses.json`、点云 GLB（RGB 坐标轴）。"
             "实例分割提示词可由多模态大模型根据 RGB + 商品中文名自动生成。"
         )
         with gr.Row():
@@ -590,6 +626,12 @@ def build_sam3_genpose_tab() -> None:
                         precision=0,
                     )
                 btn = gr.Button("运行 SAM3 + GenPose2", variant="primary")
+                out_grasp = gr.Code(
+                    label="抓取位姿 · xyzrxryrz（mm / °）+ 目标正方体",
+                    language="json",
+                    lines=14,
+                    value=_empty_grasp_json(),
+                )
 
             with gr.Column(scale=1):
                 gr.Markdown("#### 快速预览")
@@ -606,6 +648,8 @@ def build_sam3_genpose_tab() -> None:
         gr.Markdown(
             "> **全幅 RGB 彩色点云** + **每实例 RGB 坐标轴**（X红/Y绿/Z蓝）。"
             "数值坐标系 `frame=camera`；3D 预览翻 Y 与 RGB 同向。"
+            "左侧 **抓取位姿** 框：`xyzrxryrz` 为 mm/°（对齐 Gen6D 摘取点格式），"
+            "并含目标空间正方体 `size_3d` / `corners_mm`。"
         )
         with gr.Row():
             with gr.Column(scale=4):
@@ -669,6 +713,7 @@ def build_sam3_genpose_tab() -> None:
                 out_glb,
                 out_glb_dl,
                 out_ply_dl,
+                out_grasp,
                 out_poses,
                 out_json,
             ],
@@ -684,8 +729,9 @@ def build_sam3_genpose_tab() -> None:
             - **camera.json**：可用 `depth_to_rgb_shift:[dx,dy]`（Depth 平移），或沿用 `rgb_shift:[dx,dy]`（按上色约定取反）
             - **离群点剔除**：先 **全局**（深度范围+SOR），再 **按实例**（MAD+SOR），清洗后再送 GenPose2
             - **GenPose2**：ScoreNet → EnergyNet → ScaleNet，估计 6D 位姿与 3D 尺寸（无需 CAD）
+            - **抓取位姿框**：`xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），含目标正方体 `size_3d` / `size_3d_mm` / `corners_mm`
             - **poses.json**：`xyz_mm` + ZYX 欧拉角（rad）+ `size_3d`（米），相机系
-            - **运行产物**：`output/ui_runs/<时间戳>/pose_*/`
+            - **运行产物**：`output/ui_runs/<时间戳>/pose_*/`（含 `grasp_pose.json`）
             - 首次运行会加载三网权重，耗时较长；之后复用缓存
             """
         )
