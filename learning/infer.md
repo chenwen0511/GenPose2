@@ -337,7 +337,7 @@ bash start.sh status   # 打印 conf.json 依赖项与端口探测
 |------|------|
 | SAM3 分割 | 外部 SAM3 HTTP 文本分割 + 实例点云 GLB |
 | SAM3 + GenPose2 | SAM3 → GenPose2 6D 位姿；提示词可手写，或由 `vlm.sam3_prompt`（默认 qwen3-vl-4b）根据 RGB + 商品中文名生成；左侧抓取位姿框输出 `xyzrxryrz`（mm/°）+ 目标正方体，并写 `grasp_pose.json` |
-| 缺货商品位姿估计 | 缺货名（`vlm.reason` / MiniMax-M3）→ SAM3 提示词（qwen）→ SAM3 → GenPose2 → 多实例 mask/位姿 + 空间先验 → 目的 6D |
+| 缺货商品位姿估计 | 缺货名（`vlm.reason` / MiniMax-M3）→ SAM3 提示词（qwen）→ SAM3 → GenPose2（含抓取位姿 `grasp_pose.json`，输出与 SAM3+GenPose2 的 10 项对齐）→ 多实例 mask/位姿 + 空间先验 → 目的 6D |
 
 依赖外部 SAM3 服务（默认 `http://127.0.0.1:18003/infer`）及 VLM（`vlm.sam3_prompt` / `vlm.reason` / `vlm.missing_prompt`）；M3 Key 用环境变量 `ANTHROPIC_API_KEY` 或 `config/secrets.local.json`。放置产物含 `place_destination.json`、`vis_place_dest.png`、`scene_place_dest.glb`。UI 默认开启 **Depth→RGB 对齐**。HTTP API 仍见上文第 9 节与 `doc/接口文档.md`。
 

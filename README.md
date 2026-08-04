@@ -208,7 +208,7 @@ If you find our work useful in your research, please consider citing:
 |------|------|
 | **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
 | **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / 抓取位姿框（`xyzrxryrz` mm/° + 目标正方体）/ `poses.json` / `grasp_pose.json` / 坐标轴 GLB；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
-| **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2 → 空间先验+M3 选型/位移 → 目的 6D（品红 GLB） |
+| **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2（含 `grasp_pose.json` / `poses.json`）→ 空间先验+M3 选型/位移 → 目的 6D（品红 GLB） |
 
 ```bash
 # start.sh 会主动 conda activate genpose2，并打印 conf.json 依赖探测日志
@@ -220,7 +220,7 @@ bash start.sh start|stop|restart|status
 
 配置：`config/conf.json`（`sam3` API、双 VLM profile、`genpose2` 三网权重）。产物：`output/ui_runs/`（含 `grasp_pose.json`、`place_destination.json`）。
 
-**抓取位姿展示**（SAM3 + GenPose2 页签）：对齐 Gen6D 摘取点格式，左侧 JSON 框输出 `xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），并含目标空间正方体 `size_3d` / `size_3d_mm` / 8 角点 `corners_mm`；同内容写入运行目录 `grasp_pose.json`。
+**抓取位姿展示**（SAM3 + GenPose2 / 缺货商品位姿估计页签）：对齐 Gen6D 摘取点格式，JSON 框输出 `xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），并含目标空间正方体 `size_3d` / `size_3d_mm` / 8 角点 `corners_mm`；同内容写入运行目录 `grasp_pose.json`。缺货页签的 Gradio 输出与 `run_sam3_genpose_tab` 的 10 项对齐（含 grasp），再接放置目的可视化。
 
 **提示词 / VLM**（`scripts/vlm_prompt.py`）：
 - `vlm.sam3_prompt`：本地 **qwen3-vl-4b**（OpenAI `chat/completions`）生成 SAM3 提示词

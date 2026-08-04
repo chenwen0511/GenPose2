@@ -30,6 +30,7 @@ from config import (  # noqa: E402
     get_vlm_profile,
 )
 from ui.genpose_tab import (  # noqa: E402
+    _empty_grasp_json,
     _empty_poses,
     generate_prompt_ui,
     run_sam3_genpose_tab,
@@ -62,7 +63,8 @@ if not logger.handlers:
     )
 
 IdentifyOut = Tuple[str, str, str]
-# product_name, identify_raw, sam3_prompt, vlm_status + GenPoseTabOut (9)
+# product_name, identify_raw, sam3_prompt, vlm_status + GenPoseTabOut (10:
+#   depth/mask/bbox/pose_img/glb/glb_dl/ply/grasp/poses/json)
 # + place_overlay, place_glb, place_glb_dl, place_ply_dl, place_6d_json, place_summary
 PipelineOut = Tuple[
     str,
@@ -76,6 +78,7 @@ PipelineOut = Tuple[
     Optional[str],
     Optional[str],
     Optional[str],
+    str,
     str,
     str,
     Optional[Image.Image],
@@ -261,6 +264,7 @@ def _pipeline_error(
         None,
         None,
         None,
+        _empty_grasp_json(message),
         _empty_poses(message),
         err,
         None,
@@ -806,6 +810,12 @@ def build_misplaced_tab() -> None:
                 out_place_glb_dl = gr.File(label="目的 GLB", interactive=False)
                 out_place_ply_dl = gr.File(label="目的 PLY", interactive=False)
 
+        out_grasp = gr.Code(
+            label="抓取位姿 grasp_pose.json（xyzrxryrz mm/° + 目标正方体）",
+            language="json",
+            lines=10,
+            value=_empty_grasp_json(),
+        )
         out_poses = gr.Code(
             label="poses.json（当前检测）",
             language="json",
@@ -893,6 +903,7 @@ def build_misplaced_tab() -> None:
                 out_glb,
                 out_glb_dl,
                 out_ply_dl,
+                out_grasp,
                 out_poses,
                 out_json,
                 out_place_img,
