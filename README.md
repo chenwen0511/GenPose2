@@ -211,8 +211,8 @@ If you find our work useful in your research, please consider citing:
 | **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2 → 空间先验+M3 选型/位移 → 目的 6D（品红 GLB） |
 
 ```bash
-# 依赖已含在 requirements.txt（gradio、trimesh 等）
-# 需先启动外部 SAM3 HTTP（默认 http://127.0.0.1:18003/infer，见 config/conf.json）
+# start.sh 会主动 conda activate genpose2，并打印 conf.json 依赖探测日志
+# 请先启动依赖服务：SAM3（默认 :18003）、VLM sam3_prompt（默认 :8000）、远程 reason 可用
 bash start.sh start|stop|restart|status
 # UI: http://<host>:18090/
 # 日志: logs/ui.log

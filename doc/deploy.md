@@ -178,13 +178,21 @@ tail -f logs/http_server.log
 
 ### 6.3 Gradio UI（SAM3 分割 / SAM3+GenPose2 / 缺货）
 
-需先启动外部 SAM3 HTTP 服务（默认 `http://127.0.0.1:18003/infer`，见 `config/conf.json`）。
+`start.sh` 会 **主动 `conda activate genpose2`**（可用 `CONDA_ENV_NAME` / `CONDA_SH` 覆盖），并按 `config/conf.json` 打印依赖项、探测本地端口，提醒先启动依赖服务。本脚本**只启 Gradio UI**，不代启 SAM3 / VLM。
+
+启动前请确认：
+
+| 依赖 | 配置项 | 常见地址 |
+|------|--------|----------|
+| SAM3 HTTP | `sam3.api_url` | `http://127.0.0.1:18003/infer` |
+| VLM sam3_prompt | `vlm.sam3_prompt.api_url` | `http://127.0.0.1:8000/v1/chat/completions` |
+| VLM reason | `vlm.reason.api_url` | 远程 MiniMax（需 Key / 网络） |
+| 三网权重 | `genpose2.*_ckpt` | `results/ckpts/{Score,Energy,Scale}Net/*.pth` |
 
 ```bash
 cd $ROOT
-conda activate genpose2
-bash start.sh start    # 默认 http://0.0.0.0:18090/
-bash start.sh status
+bash start.sh start    # 自动 activate genpose2；默认 http://0.0.0.0:18090/
+bash start.sh status   # 含环境与依赖探测日志
 bash start.sh stop
 # 日志: logs/ui.log
 ```
