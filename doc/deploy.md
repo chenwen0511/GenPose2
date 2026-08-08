@@ -274,7 +274,7 @@ curl -X POST "http://127.0.0.1:8002/infer" \
 上传 `rgb` + `depth` + `camera` + **`mask`**，不跑 YOLO/SAM3。
 
 - mask 须与 rgb/depth 同分辨率、对齐  
-- mask 内有效深度占比建议 **> 50%**（见 `learning/如何补救.md`）
+- mask 内有效深度占比建议 **> 50%**（见 `learning/案例分析1.md`）
 
 ### 模式 B：自动分割（YOLO 默认）
 
@@ -333,6 +333,6 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 |------|------|
 | `README.md` | 项目总览、Gradio UI、训练环境说明 |
 | `config/conf.json` | UI / SAM3 API / 双 VLM profile（`sam3_prompt`+`reason`）/ GenPose2 权重默认配置 |
-| `learning/infer.md` | 离线推理与 HTTP 说明 |
-| `learning/如何补救.md` | depth / mask 质量与补救 |
-| `learning/案例分析1.md` | 深度丢失案例 |
+| `learning/推理过程详解.md` | 离线推理与 HTTP 说明 |
+| `learning/料盘边缘场景训练.md` | 密排料盘 / 边缘点云从零重训练 |
+| `learning/案例分析1.md` | 深度丢失案例与 mask/深度质量 |

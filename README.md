@@ -103,6 +103,8 @@ genpose2
 
 Set the parameter `--data_path` in `scripts/train_score.sh`, `scripts/train_energy.sh` and `scripts/train_scale.sh` to your own path of SOPE dataset.
 
+料盘密排、仅见边缘等专用场景的从零重训练说明见 [`learning/料盘边缘场景训练.md`](learning/料盘边缘场景训练.md)；通用推理流程见 [`learning/推理过程详解.md`](learning/推理过程详解.md)。
+
 - ### Score network
 
   Train the score network to generate the pose candidates.

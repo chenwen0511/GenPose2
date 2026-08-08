@@ -87,7 +87,7 @@ def _load_meta_dict(meta_path: Path) -> dict:
     with open(meta_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
     if "camera" not in meta or "intrinsics" not in meta["camera"]:
-        raise ValueError("meta.json 需包含 camera.intrinsics（见 learning/infer.md）")
+        raise ValueError("meta.json 需包含 camera.intrinsics（见 learning/推理过程详解.md）")
     return meta
 
 
