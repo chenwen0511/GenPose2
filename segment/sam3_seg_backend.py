@@ -80,7 +80,7 @@ def _cocomask():
 DEFAULT_SAM3_ROOT = "/home/ubuntu/stephen/01-code/sam3"
 DEFAULT_SAM3_PYTHON = "/home/ubuntu/miniconda3/envs/sam3/bin/python"
 DEFAULT_SAM3_INFER_SCRIPT = "/home/ubuntu/stephen/01-code/sam3/scripts/infer.py"
-DEFAULT_SAM3_PROMPT = "white plastic tray"
+DEFAULT_SAM3_PROMPT = "Plastic Reel Connected With Tape"
 DEFAULT_SAM3_THRESHOLD = 0.41
 DEFAULT_SAM3_MASK_THRESHOLD = 0.50
 DEFAULT_SAM3_CHECKPOINT = "/home/ubuntu/stephen/02-weight/sam3/sam3.pt"
