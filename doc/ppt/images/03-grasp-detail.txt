@@ -1,0 +1,4139 @@
+{
+  "success": true,
+  "method": "gen6d_marker_qi",
+  "message": "ok",
+  "elapsed_s": 0.746,
+  "num_instances": 11,
+  "detections": [
+    {
+      "id": 1,
+      "score": 0.7574357102110338,
+      "bbox": [
+        334,
+        117,
+        27,
+        215
+      ]
+    },
+    {
+      "id": 2,
+      "score": 0.8895288461051276,
+      "bbox": [
+        476,
+        107,
+        71,
+        223
+      ]
+    },
+    {
+      "id": 3,
+      "score": 0.9152045921779318,
+      "bbox": [
+        216,
+        115,
+        40,
+        217
+      ]
+    },
+    {
+      "id": 4,
+      "score": 0.9008791448995754,
+      "bbox": [
+        272,
+        117,
+        24,
+        215
+      ]
+    },
+    {
+      "id": 5,
+      "score": 0.8862236206549613,
+      "bbox": [
+        578,
+        107,
+        62,
+        222
+      ]
+    },
+    {
+      "id": 6,
+      "score": 0.8763171902779356,
+      "bbox": [
+        529,
+        109,
+        74,
+        216
+      ]
+    },
+    {
+      "id": 7,
+      "score": 0.9369805284248849,
+      "bbox": [
+        149,
+        115,
+        63,
+        217
+      ]
+    },
+    {
+      "id": 8,
+      "score": 0.9280183729876293,
+      "bbox": [
+        89,
+        104,
+        67,
+        228
+      ]
+    },
+    {
+      "id": 9,
+      "score": 0.9468920959838323,
+      "bbox": [
+        25,
+        104,
+        80,
+        228
+      ]
+    },
+    {
+      "id": 10,
+      "score": 0.9132132627819569,
+      "bbox": [
+        378,
+        117,
+        49,
+        213
+      ]
+    },
+    {
+      "id": 11,
+      "score": 0.9181872878284922,
+      "bbox": [
+        425,
+        107,
+        62,
+        223
+      ]
+    }
+  ],
+  "grasp_pose": {
+    "success": true,
+    "xyzrxryrz": [
+      -63.66,
+      -26.57,
+      360.0,
+      -16.949,
+      1.239,
+      179.843
+    ],
+    "frame": "camera",
+    "preview_frame": "glb_y_up",
+    "axis_hint": "X right, Y down, Z forward (mm)",
+    "unit": {
+      "xyz": "mm",
+      "rx_ry_rz": "deg"
+    },
+    "euler_convention": "ZYX (rz,ry,rx) → displayed as [x,y,z,rx,ry,rz]",
+    "position_mm": [
+      -63.66,
+      -26.57,
+      360.0
+    ],
+    "rpy_deg": {
+      "rx": -16.949,
+      "ry": 1.239,
+      "rz": 179.843
+    },
+    "rotation_matrix": [
+      [
+        -0.999762,
+        0.003687,
+        -0.021482
+      ],
+      [
+        0.002735,
+        -0.956579,
+        -0.291461
+      ],
+      [
+        -0.021624,
+        -0.29145,
+        0.956341
+      ]
+    ],
+    "meta": {
+      "instance_id": 5,
+      "p_i_mm": [
+        -66.52,
+        -26.84,
+        360.0
+      ],
+      "q_i_mm": [
+        -63.66,
+        -26.57,
+        360.0
+      ],
+      "x_dist_mm": 0.79,
+      "num_sphere": 170,
+      "num_band": 51,
+      "radius_mm": 8.0,
+      "y_band_mm": 2.0,
+      "rotation_from": "p1",
+      "role": "gripper_grasp_point"
+    }
+  },
+  "xyzrxryrz": [
+    -63.66,
+    -26.57,
+    360.0,
+    -16.949,
+    1.239,
+    179.843
+  ],
+  "pointcloud": {
+    "point_count": 50304,
+    "point_stats": {
+      "background": 0,
+      "instances": 50000,
+      "instance_ids": 11
+    },
+    "p1_axes": true,
+    "instance_qi_all": [
+      {
+        "instance_id": 1,
+        "position_mm": [
+          -143.68,
+          -11.92,
+          356.0
+        ],
+        "p_i_mm": [
+          -143.11,
+          -11.31,
+          356.0
+        ],
+        "q_i_mm": [
+          -143.68,
+          -11.92,
+          356.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -11.31,
+        "num_sphere": 29,
+        "num_band": 9,
+        "z_mm": 356.0,
+        "num_raw": 9637,
+        "num_inlier": 9261,
+        "x_dist_mm": 80.92
+      },
+      {
+        "instance_id": 2,
+        "position_mm": [
+          -102.87,
+          -20.42,
+          360.0
+        ],
+        "p_i_mm": [
+          -106.21,
+          -20.32,
+          360.0
+        ],
+        "q_i_mm": [
+          -102.87,
+          -20.42,
+          360.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -20.32,
+        "num_sphere": 263,
+        "num_band": 98,
+        "z_mm": 360.0,
+        "num_raw": 6514,
+        "num_inlier": 5769,
+        "x_dist_mm": 40.01
+      },
+      {
+        "instance_id": 3,
+        "position_mm": [
+          -138.71,
+          -11.48,
+          358.0
+        ],
+        "p_i_mm": [
+          -140.97,
+          -11.37,
+          358.0
+        ],
+        "q_i_mm": [
+          -138.71,
+          -11.48,
+          358.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -11.37,
+        "num_sphere": 273,
+        "num_band": 91,
+        "z_mm": 358.0,
+        "num_raw": 7727,
+        "num_inlier": 7311,
+        "x_dist_mm": 75.9
+      },
+      {
+        "instance_id": 4,
+        "position_mm": [
+          90.14,
+          -3.2,
+          364.0
+        ],
+        "p_i_mm": [
+          93.28,
+          -3.18,
+          364.0
+        ],
+        "q_i_mm": [
+          90.14,
+          -3.2,
+          364.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -3.18,
+        "num_sphere": 266,
+        "num_band": 94,
+        "z_mm": 364.0,
+        "num_raw": 4676,
+        "num_inlier": 4330,
+        "x_dist_mm": 153.0
+      },
+      {
+        "instance_id": 5,
+        "position_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "p_i_mm": [
+          -66.52,
+          -26.84,
+          360.0
+        ],
+        "q_i_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -26.84,
+        "num_sphere": 170,
+        "num_band": 51,
+        "z_mm": 360.0,
+        "num_raw": 4495,
+        "num_inlier": 3784,
+        "x_dist_mm": 0.79
+      },
+      {
+        "instance_id": 6,
+        "position_mm": [
+          55.0,
+          -22.94,
+          365.0
+        ],
+        "p_i_mm": [
+          58.1,
+          -23.0,
+          365.0
+        ],
+        "q_i_mm": [
+          55.0,
+          -22.94,
+          365.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -23.0,
+        "num_sphere": 245,
+        "num_band": 86,
+        "z_mm": 365.0,
+        "num_raw": 2852,
+        "num_inlier": 2852,
+        "x_dist_mm": 117.94
+      },
+      {
+        "instance_id": 7,
+        "position_mm": [
+          -28.09,
+          -28.33,
+          364.0
+        ],
+        "p_i_mm": [
+          -31.91,
+          -28.33,
+          364.0
+        ],
+        "q_i_mm": [
+          -28.09,
+          -28.33,
+          364.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -28.33,
+        "num_sphere": 215,
+        "num_band": 91,
+        "z_mm": 364.0,
+        "num_raw": 2946,
+        "num_inlier": 2715,
+        "x_dist_mm": 34.86
+      },
+      {
+        "instance_id": 8,
+        "position_mm": [
+          127.21,
+          -14.65,
+          365.0
+        ],
+        "p_i_mm": [
+          130.18,
+          -14.6,
+          365.0
+        ],
+        "q_i_mm": [
+          127.21,
+          -14.65,
+          365.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -14.6,
+        "num_sphere": 305,
+        "num_band": 102,
+        "z_mm": 365.0,
+        "num_raw": 6399,
+        "num_inlier": 5817,
+        "x_dist_mm": 190.11
+      },
+      {
+        "instance_id": 9,
+        "position_mm": [
+          167.58,
+          -16.94,
+          368.0
+        ],
+        "p_i_mm": [
+          167.58,
+          -17.74,
+          368.0
+        ],
+        "q_i_mm": [
+          167.58,
+          -16.94,
+          368.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -17.74,
+        "num_sphere": 7,
+        "num_band": 3,
+        "z_mm": 368.0,
+        "num_raw": 7320,
+        "num_inlier": 7071,
+        "x_dist_mm": 230.54
+      },
+      {
+        "instance_id": 10,
+        "position_mm": [
+          131.32,
+          -7.07,
+          364.0
+        ],
+        "p_i_mm": [
+          131.02,
+          -7.97,
+          364.0
+        ],
+        "q_i_mm": [
+          131.32,
+          -7.07,
+          364.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -7.97,
+        "num_sphere": 15,
+        "num_band": 8,
+        "z_mm": 364.0,
+        "num_raw": 6508,
+        "num_inlier": 6249,
+        "x_dist_mm": 194.18
+      },
+      {
+        "instance_id": 11,
+        "position_mm": [
+          10.62,
+          4.75,
+          365.0
+        ],
+        "p_i_mm": [
+          7.04,
+          4.62,
+          365.0
+        ],
+        "q_i_mm": [
+          10.62,
+          4.75,
+          365.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": 4.62,
+        "num_sphere": 178,
+        "num_band": 81,
+        "z_mm": 365.0,
+        "num_raw": 3022,
+        "num_inlier": 2916,
+        "x_dist_mm": 73.5
+      }
+    ],
+    "instance_qi": [
+      {
+        "instance_id": 5,
+        "position_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "p_i_mm": [
+          -66.52,
+          -26.84,
+          360.0
+        ],
+        "q_i_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -26.84,
+        "num_sphere": 170,
+        "num_band": 51,
+        "z_mm": 360.0,
+        "num_raw": 4495,
+        "num_inlier": 3784,
+        "x_dist_mm": 0.79,
+        "selected_by": "nearest_p1_x",
+        "rank": 1,
+        "candidates": 11,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ],
+        "glb_position_mm": [
+          -63.66,
+          26.57,
+          360.0
+        ],
+        "frame": "camera",
+        "preview_frame": "glb_y_up"
+      }
+    ],
+    "instance_pi_all": [
+      {
+        "instance_id": 1,
+        "position_mm": [
+          -143.68,
+          -11.92,
+          356.0
+        ],
+        "p_i_mm": [
+          -143.11,
+          -11.31,
+          356.0
+        ],
+        "q_i_mm": [
+          -143.68,
+          -11.92,
+          356.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -11.31,
+        "num_sphere": 29,
+        "num_band": 9,
+        "z_mm": 356.0,
+        "num_raw": 9637,
+        "num_inlier": 9261,
+        "x_dist_mm": 80.92
+      },
+      {
+        "instance_id": 2,
+        "position_mm": [
+          -102.87,
+          -20.42,
+          360.0
+        ],
+        "p_i_mm": [
+          -106.21,
+          -20.32,
+          360.0
+        ],
+        "q_i_mm": [
+          -102.87,
+          -20.42,
+          360.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -20.32,
+        "num_sphere": 263,
+        "num_band": 98,
+        "z_mm": 360.0,
+        "num_raw": 6514,
+        "num_inlier": 5769,
+        "x_dist_mm": 40.01
+      },
+      {
+        "instance_id": 3,
+        "position_mm": [
+          -138.71,
+          -11.48,
+          358.0
+        ],
+        "p_i_mm": [
+          -140.97,
+          -11.37,
+          358.0
+        ],
+        "q_i_mm": [
+          -138.71,
+          -11.48,
+          358.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -11.37,
+        "num_sphere": 273,
+        "num_band": 91,
+        "z_mm": 358.0,
+        "num_raw": 7727,
+        "num_inlier": 7311,
+        "x_dist_mm": 75.9
+      },
+      {
+        "instance_id": 4,
+        "position_mm": [
+          90.14,
+          -3.2,
+          364.0
+        ],
+        "p_i_mm": [
+          93.28,
+          -3.18,
+          364.0
+        ],
+        "q_i_mm": [
+          90.14,
+          -3.2,
+          364.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -3.18,
+        "num_sphere": 266,
+        "num_band": 94,
+        "z_mm": 364.0,
+        "num_raw": 4676,
+        "num_inlier": 4330,
+        "x_dist_mm": 153.0
+      },
+      {
+        "instance_id": 5,
+        "position_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "p_i_mm": [
+          -66.52,
+          -26.84,
+          360.0
+        ],
+        "q_i_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -26.84,
+        "num_sphere": 170,
+        "num_band": 51,
+        "z_mm": 360.0,
+        "num_raw": 4495,
+        "num_inlier": 3784,
+        "x_dist_mm": 0.79
+      },
+      {
+        "instance_id": 6,
+        "position_mm": [
+          55.0,
+          -22.94,
+          365.0
+        ],
+        "p_i_mm": [
+          58.1,
+          -23.0,
+          365.0
+        ],
+        "q_i_mm": [
+          55.0,
+          -22.94,
+          365.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -23.0,
+        "num_sphere": 245,
+        "num_band": 86,
+        "z_mm": 365.0,
+        "num_raw": 2852,
+        "num_inlier": 2852,
+        "x_dist_mm": 117.94
+      },
+      {
+        "instance_id": 7,
+        "position_mm": [
+          -28.09,
+          -28.33,
+          364.0
+        ],
+        "p_i_mm": [
+          -31.91,
+          -28.33,
+          364.0
+        ],
+        "q_i_mm": [
+          -28.09,
+          -28.33,
+          364.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -28.33,
+        "num_sphere": 215,
+        "num_band": 91,
+        "z_mm": 364.0,
+        "num_raw": 2946,
+        "num_inlier": 2715,
+        "x_dist_mm": 34.86
+      },
+      {
+        "instance_id": 8,
+        "position_mm": [
+          127.21,
+          -14.65,
+          365.0
+        ],
+        "p_i_mm": [
+          130.18,
+          -14.6,
+          365.0
+        ],
+        "q_i_mm": [
+          127.21,
+          -14.65,
+          365.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -14.6,
+        "num_sphere": 305,
+        "num_band": 102,
+        "z_mm": 365.0,
+        "num_raw": 6399,
+        "num_inlier": 5817,
+        "x_dist_mm": 190.11
+      },
+      {
+        "instance_id": 9,
+        "position_mm": [
+          167.58,
+          -16.94,
+          368.0
+        ],
+        "p_i_mm": [
+          167.58,
+          -17.74,
+          368.0
+        ],
+        "q_i_mm": [
+          167.58,
+          -16.94,
+          368.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -17.74,
+        "num_sphere": 7,
+        "num_band": 3,
+        "z_mm": 368.0,
+        "num_raw": 7320,
+        "num_inlier": 7071,
+        "x_dist_mm": 230.54
+      },
+      {
+        "instance_id": 10,
+        "position_mm": [
+          131.32,
+          -7.07,
+          364.0
+        ],
+        "p_i_mm": [
+          131.02,
+          -7.97,
+          364.0
+        ],
+        "q_i_mm": [
+          131.32,
+          -7.07,
+          364.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -7.97,
+        "num_sphere": 15,
+        "num_band": 8,
+        "z_mm": 364.0,
+        "num_raw": 6508,
+        "num_inlier": 6249,
+        "x_dist_mm": 194.18
+      },
+      {
+        "instance_id": 11,
+        "position_mm": [
+          10.62,
+          4.75,
+          365.0
+        ],
+        "p_i_mm": [
+          7.04,
+          4.62,
+          365.0
+        ],
+        "q_i_mm": [
+          10.62,
+          4.75,
+          365.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": 4.62,
+        "num_sphere": 178,
+        "num_band": 81,
+        "z_mm": 365.0,
+        "num_raw": 3022,
+        "num_inlier": 2916,
+        "x_dist_mm": 73.5
+      }
+    ],
+    "instance_pi": [
+      {
+        "instance_id": 5,
+        "position_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "p_i_mm": [
+          -66.52,
+          -26.84,
+          360.0
+        ],
+        "q_i_mm": [
+          -63.66,
+          -26.57,
+          360.0
+        ],
+        "radius_mm": 8.0,
+        "y_band_mm": 2.0,
+        "y_ref_mm": -26.84,
+        "num_sphere": 170,
+        "num_band": 51,
+        "z_mm": 360.0,
+        "num_raw": 4495,
+        "num_inlier": 3784,
+        "x_dist_mm": 0.79,
+        "selected_by": "nearest_p1_x",
+        "rank": 1,
+        "candidates": 11,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ],
+        "glb_position_mm": [
+          -63.66,
+          26.57,
+          360.0
+        ],
+        "frame": "camera",
+        "preview_frame": "glb_y_up"
+      }
+    ],
+    "pi_count": 1,
+    "pi_candidate_count": 11,
+    "pi_note": "各实例：p_i=剔除外点后 Z 最小 → 球半径 8mm → 相机 y±2mm → q_i(xy 均值, z=p_i.z)；有 P1 时再按 q_i 的 P1-X |dx| 只保留最近 1 个用于显示",
+    "instance_pi_x_all": [
+      {
+        "instance_id": 1,
+        "position_mm": [
+          -142.35,
+          -65.42,
+          374.0
+        ],
+        "x_dist_mm": 79.05,
+        "z_mm": 374.0,
+        "num_raw": 9637,
+        "num_inlier": 9261,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 2,
+        "position_mm": [
+          -92.4,
+          -19.05,
+          409.0
+        ],
+        "x_dist_mm": 28.48,
+        "z_mm": 409.0,
+        "num_raw": 6514,
+        "num_inlier": 5769,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 3,
+        "position_mm": [
+          -108.17,
+          -65.59,
+          375.0
+        ],
+        "x_dist_mm": 44.85,
+        "z_mm": 375.0,
+        "num_raw": 7727,
+        "num_inlier": 7311,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 4,
+        "position_mm": [
+          79.65,
+          38.45,
+          385.0
+        ],
+        "x_dist_mm": 142.86,
+        "z_mm": 385.0,
+        "num_raw": 4676,
+        "num_inlier": 4330,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 5,
+        "position_mm": [
+          -62.89,
+          -9.74,
+          363.0
+        ],
+        "x_dist_mm": 0.0,
+        "z_mm": 363.0,
+        "num_raw": 4495,
+        "num_inlier": 3784,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 6,
+        "position_mm": [
+          44.17,
+          40.98,
+          385.0
+        ],
+        "x_dist_mm": 107.38,
+        "z_mm": 385.0,
+        "num_raw": 2852,
+        "num_inlier": 2852,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 7,
+        "position_mm": [
+          -35.84,
+          -72.79,
+          387.0
+        ],
+        "x_dist_mm": 27.73,
+        "z_mm": 387.0,
+        "num_raw": 2946,
+        "num_inlier": 2715,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 8,
+        "position_mm": [
+          94.91,
+          -34.7,
+          368.0
+        ],
+        "x_dist_mm": 157.94,
+        "z_mm": 368.0,
+        "num_raw": 6399,
+        "num_inlier": 5817,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 9,
+        "position_mm": [
+          165.9,
+          -36.81,
+          371.0
+        ],
+        "x_dist_mm": 228.98,
+        "z_mm": 371.0,
+        "num_raw": 7320,
+        "num_inlier": 7071,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 10,
+        "position_mm": [
+          131.02,
+          -4.37,
+          364.0
+        ],
+        "x_dist_mm": 193.87,
+        "z_mm": 364.0,
+        "num_raw": 6508,
+        "num_inlier": 6249,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      },
+      {
+        "instance_id": 11,
+        "position_mm": [
+          4.93,
+          -70.42,
+          388.0
+        ],
+        "x_dist_mm": 68.51,
+        "z_mm": 388.0,
+        "num_raw": 3022,
+        "num_inlier": 2916,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ]
+      }
+    ],
+    "instance_pi_x": [
+      {
+        "instance_id": 5,
+        "position_mm": [
+          -62.89,
+          -9.74,
+          363.0
+        ],
+        "x_dist_mm": 0.0,
+        "z_mm": 363.0,
+        "num_raw": 4495,
+        "num_inlier": 3784,
+        "rotation_from": "p1",
+        "rotation_matrix": [
+          [
+            -0.999762,
+            0.003687,
+            -0.021482
+          ],
+          [
+            0.002735,
+            -0.956579,
+            -0.291461
+          ],
+          [
+            -0.021624,
+            -0.29145,
+            0.956341
+          ]
+        ],
+        "selected_by": "nearest_p1_x",
+        "rank": 1,
+        "candidates": 11
+      }
+    ]
+  },
+  "scene_glb": "outputs/new_grasp_runs/new_grasp_ea65af1eb5_instance.glb",
+  "scene_ply": "outputs/new_grasp_runs/new_grasp_ea65af1eb5_instance.ply",
+  "sensor_valid_ratio": 0.7850260416666667,
+  "image_size": [
+    640,
+    480
+  ],
+  "sam3_api": "http://127.0.0.1:18003/infer",
+  "instance_prompt": "Plastic Reel Connected With Tape",
+  "threshold": 0.41,
+  "mask_threshold": 0.5,
+  "marker_p1": {
+    "hole_prompt": "All small circular through holes on the gray flat metal shelf panel in horizontal",
+    "led_prompt": "Small glowing circular blue LED indicator light on the gray metal shelf plate",
+    "holes": {
+      "sam3_elapsed_s": 0.209,
+      "num_detections": 19,
+      "selection": {
+        "count": 19,
+        "candidates": [
+          {
+            "id": 3,
+            "sam3_score": 0.6651931024001986,
+            "aspect_ratio": 0.85,
+            "bbox_xywh": [
+              78,
+              350,
+              20,
+              17
+            ],
+            "centroid_uv": [
+              87.19,
+              358.03
+            ]
+          },
+          {
+            "id": 11,
+            "sam3_score": 0.6409730239274649,
+            "aspect_ratio": 0.9444,
+            "bbox_xywh": [
+              109,
+              367,
+              18,
+              17
+            ],
+            "centroid_uv": [
+              117.61,
+              375.54
+            ]
+          },
+          {
+            "id": 16,
+            "sam3_score": 0.6328431805702255,
+            "aspect_ratio": 0.9444,
+            "bbox_xywh": [
+              136,
+              350,
+              18,
+              17
+            ],
+            "centroid_uv": [
+              144.72,
+              357.32
+            ]
+          },
+          {
+            "id": 12,
+            "sam3_score": 0.6336369935948285,
+            "aspect_ratio": 0.85,
+            "bbox_xywh": [
+              165,
+              367,
+              20,
+              17
+            ],
+            "centroid_uv": [
+              174.59,
+              374.77
+            ]
+          },
+          {
+            "id": 15,
+            "sam3_score": 0.6320486463511595,
+            "aspect_ratio": 0.8889,
+            "bbox_xywh": [
+              194,
+              349,
+              18,
+              16
+            ],
+            "centroid_uv": [
+              202.19,
+              356.72
+            ]
+          },
+          {
+            "id": 4,
+            "sam3_score": 0.6424324776295582,
+            "aspect_ratio": 0.8889,
+            "bbox_xywh": [
+              249,
+              349,
+              18,
+              16
+            ],
+            "centroid_uv": [
+              258.06,
+              356.44
+            ]
+          },
+          {
+            "id": 5,
+            "sam3_score": 0.640635854839898,
+            "aspect_ratio": 0.9444,
+            "bbox_xywh": [
+              278,
+              365,
+              18,
+              17
+            ],
+            "centroid_uv": [
+              286.45,
+              373.54
+            ]
+          },
+          {
+            "id": 13,
+            "sam3_score": 0.6264670230421525,
+            "aspect_ratio": 0.8889,
+            "bbox_xywh": [
+              314,
+              349,
+              18,
+              16
+            ],
+            "centroid_uv": [
+              322.12,
+              356.35
+            ]
+          },
+          {
+            "id": 9,
+            "sam3_score": 0.6113239653557029,
+            "aspect_ratio": 1.0,
+            "bbox_xywh": [
+              341,
+              365,
+              17,
+              17
+            ],
+            "centroid_uv": [
+              349.22,
+              373.44
+            ]
+          },
+          {
+            "id": 2,
+            "sam3_score": 0.603522975263106,
+            "aspect_ratio": 0.8333,
+            "bbox_xywh": [
+              369,
+              349,
+              18,
+              15
+            ],
+            "centroid_uv": [
+              377.36,
+              356.21
+            ]
+          },
+          {
+            "id": 10,
+            "sam3_score": 0.5975491763665274,
+            "aspect_ratio": 0.9444,
+            "bbox_xywh": [
+              396,
+              365,
+              18,
+              17
+            ],
+            "centroid_uv": [
+              404.57,
+              373.36
+            ]
+          },
+          {
+            "id": 7,
+            "sam3_score": 0.5716470422998096,
+            "aspect_ratio": 0.8333,
+            "bbox_xywh": [
+              425,
+              349,
+              18,
+              15
+            ],
+            "centroid_uv": [
+              433.48,
+              356.22
+            ]
+          },
+          {
+            "id": 1,
+            "sam3_score": 0.5830253109361754,
+            "aspect_ratio": 1.0,
+            "bbox_xywh": [
+              452,
+              365,
+              17,
+              17
+            ],
+            "centroid_uv": [
+              460.19,
+              373.69
+            ]
+          },
+          {
+            "id": 19,
+            "sam3_score": 0.5632578476003665,
+            "aspect_ratio": 0.9412,
+            "bbox_xywh": [
+              481,
+              349,
+              17,
+              16
+            ],
+            "centroid_uv": [
+              489.75,
+              355.94
+            ]
+          },
+          {
+            "id": 18,
+            "sam3_score": 0.5700920106599905,
+            "aspect_ratio": 0.9444,
+            "bbox_xywh": [
+              507,
+              365,
+              18,
+              17
+            ],
+            "centroid_uv": [
+              515.62,
+              373.18
+            ]
+          },
+          {
+            "id": 14,
+            "sam3_score": 0.5352806271331835,
+            "aspect_ratio": 0.8889,
+            "bbox_xywh": [
+              538,
+              349,
+              18,
+              16
+            ],
+            "centroid_uv": [
+              546.05,
+              356.46
+            ]
+          },
+          {
+            "id": 6,
+            "sam3_score": 0.5617558169853218,
+            "aspect_ratio": 1.0,
+            "bbox_xywh": [
+              563,
+              365,
+              17,
+              17
+            ],
+            "centroid_uv": [
+              570.82,
+              373.12
+            ]
+          },
+          {
+            "id": 17,
+            "sam3_score": 0.5420452491633155,
+            "aspect_ratio": 0.85,
+            "bbox_xywh": [
+              592,
+              347,
+              20,
+              17
+            ],
+            "centroid_uv": [
+              601.18,
+              355.27
+            ]
+          },
+          {
+            "id": 8,
+            "sam3_score": 0.5387102204028366,
+            "aspect_ratio": 0.85,
+            "bbox_xywh": [
+              616,
+              365,
+              20,
+              17
+            ],
+            "centroid_uv": [
+              625.39,
+              372.43
+            ]
+          }
+        ]
+      }
+    },
+    "led": {
+      "sam3_elapsed_s": 0.125,
+      "num_detections": 1,
+      "selection": {
+        "selected": {
+          "id": 1,
+          "score": 0.786,
+          "sam3_score": 0.909264512360149,
+          "blue_score": 0.8658,
+          "aspect_ratio": 0.9474,
+          "bbox_xywh": [
+            223,
+            365,
+            18,
+            19
+          ]
+        },
+        "candidates": [
+          {
+            "id": 1,
+            "score": 0.786,
+            "sam3_score": 0.909264512360149,
+            "blue_score": 0.8658,
+            "aspect_ratio": 0.9474,
+            "bbox_xywh": [
+              223,
+              365,
+              18,
+              19
+            ]
+          }
+        ]
+      }
+    },
+    "success": true,
+    "p1": {
+      "position_m": [
+        -0.063363,
+        0.082378,
+        0.3965
+      ],
+      "position_mm": [
+        -63.363,
+        82.378,
+        396.5
+      ],
+      "rotation_matrix": [
+        [
+          -0.999762,
+          0.003687,
+          -0.021482
+        ],
+        [
+          0.002735,
+          -0.956579,
+          -0.291461
+        ],
+        [
+          -0.021624,
+          -0.29145,
+          0.956341
+        ]
+      ],
+      "rotation_euler_zyx_rad": [
+        3.138857,
+        0.021625,
+        -0.295814
+      ]
+    },
+    "p1_meta": {
+      "method": "shelf_led_holes",
+      "frame": "camera",
+      "preview_frame": "glb_y_up",
+      "axis_hint": "X right, Y down, Z forward (mm)",
+      "center_uv": [
+        231.17,
+        374.57
+      ],
+      "circle_center_uv": [
+        231.17,
+        374.57
+      ],
+      "center_method": "led_min_enclosing_circle_center",
+      "corners_uv": {
+        "A": [
+          220.73,
+          364.13
+        ],
+        "B": [
+          241.61,
+          364.13
+        ],
+        "C": [
+          241.61,
+          385.02
+        ],
+        "D": [
+          220.73,
+          385.02
+        ]
+      },
+      "corners_rot45_uv": {
+        "a": [
+          231.17,
+          359.81
+        ],
+        "b": [
+          245.94,
+          374.57
+        ],
+        "c": [
+          231.17,
+          389.34
+        ],
+        "d": [
+          216.4,
+          374.57
+        ]
+      },
+      "corner_depths_m": [
+        0.394,
+        0.394,
+        0.4,
+        0.398
+      ],
+      "corner_rot45_depths_m": [
+        0.392,
+        0.397,
+        0.401,
+        0.396
+      ],
+      "depth_center_m": 0.3965,
+      "depth_method": "mean_of_led_square_corners_ABCD_abcd_rot45",
+      "plane_points": 152,
+      "plane_normal": [
+        -0.021482,
+        -0.291461,
+        0.956341
+      ],
+      "plane_source": "all_holes_square8_joint",
+      "led_plane_normal": [
+        -0.053669,
+        -0.362372,
+        0.930487
+      ],
+      "hole_plane": {
+        "method": "all_holes_square8_joint_plane",
+        "holes_used": 19,
+        "num_corner_points": 152,
+        "num_inliers": 152,
+        "plane_centroid_m": [
+          0.025792,
+          0.075916,
+          0.396013
+        ],
+        "plane_normal": [
+          -0.021482,
+          -0.291461,
+          0.956341
+        ],
+        "mean_local_normal": [
+          -0.007948,
+          -0.290163,
+          0.956944
+        ],
+        "mean_local_dot_joint": 0.9999,
+        "per_hole": [
+          {
+            "id": 1,
+            "center_uv": [
+              87.5,
+              357.5
+            ],
+            "corners_uv": {
+              "A": [
+                77.38,
+                347.38
+              ],
+              "B": [
+                97.62,
+                347.38
+              ],
+              "C": [
+                97.62,
+                367.62
+              ],
+              "D": [
+                77.38,
+                367.62
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                87.5,
+                343.18
+              ],
+              "b": [
+                101.82,
+                357.5
+              ],
+              "c": [
+                87.5,
+                371.82
+              ],
+              "d": [
+                73.18,
+                357.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.387,
+              0.388,
+              0.392,
+              0.392,
+              0.387,
+              0.39,
+              0.392,
+              0.388
+            ],
+            "valid_uvs": [
+              [
+                77.38,
+                347.38
+              ],
+              [
+                97.62,
+                347.38
+              ],
+              [
+                97.62,
+                367.62
+              ],
+              [
+                77.38,
+                367.62
+              ],
+              [
+                87.5,
+                343.18
+              ],
+              [
+                101.82,
+                357.5
+              ],
+              [
+                87.5,
+                371.82
+              ],
+              [
+                73.18,
+                357.5
+              ]
+            ],
+            "local_plane_normal": [
+              -0.066939,
+              -0.289919,
+              0.954707
+            ]
+          },
+          {
+            "id": 2,
+            "center_uv": [
+              116.91,
+              376.03
+            ],
+            "corners_uv": {
+              "A": [
+                106.96,
+                366.08
+              ],
+              "B": [
+                126.85,
+                366.08
+              ],
+              "C": [
+                126.85,
+                385.97
+              ],
+              "D": [
+                106.96,
+                385.97
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                116.91,
+                361.97
+              ],
+              "b": [
+                130.97,
+                376.03
+              ],
+              "c": [
+                116.91,
+                390.09
+              ],
+              "d": [
+                102.84,
+                376.03
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.392,
+              0.393,
+              0.396,
+              0.397,
+              0.391,
+              0.394,
+              0.398,
+              0.394
+            ],
+            "valid_uvs": [
+              [
+                106.96,
+                366.08
+              ],
+              [
+                126.85,
+                366.08
+              ],
+              [
+                126.85,
+                385.97
+              ],
+              [
+                106.96,
+                385.97
+              ],
+              [
+                116.91,
+                361.97
+              ],
+              [
+                130.97,
+                376.03
+              ],
+              [
+                116.91,
+                390.09
+              ],
+              [
+                102.84,
+                376.03
+              ]
+            ],
+            "local_plane_normal": [
+              0.001367,
+              -0.309197,
+              0.950997
+            ]
+          },
+          {
+            "id": 3,
+            "center_uv": [
+              145.5,
+              356.5
+            ],
+            "corners_uv": {
+              "A": [
+                135.58,
+                346.58
+              ],
+              "B": [
+                155.42,
+                346.58
+              ],
+              "C": [
+                155.42,
+                366.42
+              ],
+              "D": [
+                135.58,
+                366.42
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                145.5,
+                342.46
+              ],
+              "b": [
+                159.54,
+                356.5
+              ],
+              "c": [
+                145.5,
+                370.54
+              ],
+              "d": [
+                131.46,
+                356.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.388,
+              0.389,
+              0.393,
+              0.393,
+              0.388,
+              0.39,
+              0.394,
+              0.391
+            ],
+            "valid_uvs": [
+              [
+                135.58,
+                346.58
+              ],
+              [
+                155.42,
+                346.58
+              ],
+              [
+                155.42,
+                366.42
+              ],
+              [
+                135.58,
+                366.42
+              ],
+              [
+                145.5,
+                342.46
+              ],
+              [
+                159.54,
+                356.5
+              ],
+              [
+                145.5,
+                370.54
+              ],
+              [
+                131.46,
+                356.5
+              ]
+            ],
+            "local_plane_normal": [
+              0.008134,
+              -0.307711,
+              0.951445
+            ]
+          },
+          {
+            "id": 4,
+            "center_uv": [
+              174.5,
+              375.0
+            ],
+            "corners_uv": {
+              "A": [
+                164.54,
+                365.04
+              ],
+              "B": [
+                184.46,
+                365.04
+              ],
+              "C": [
+                184.46,
+                384.96
+              ],
+              "D": [
+                164.54,
+                384.96
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                174.5,
+                360.91
+              ],
+              "b": [
+                188.59,
+                375.0
+              ],
+              "c": [
+                174.5,
+                389.09
+              ],
+              "d": [
+                160.41,
+                375.0
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.393,
+              0.393,
+              0.398,
+              0.398,
+              0.392,
+              0.396,
+              0.399,
+              0.396
+            ],
+            "valid_uvs": [
+              [
+                164.54,
+                365.04
+              ],
+              [
+                184.46,
+                365.04
+              ],
+              [
+                184.46,
+                384.96
+              ],
+              [
+                164.54,
+                384.96
+              ],
+              [
+                174.5,
+                360.91
+              ],
+              [
+                188.59,
+                375.0
+              ],
+              [
+                174.5,
+                389.09
+              ],
+              [
+                160.41,
+                375.0
+              ]
+            ],
+            "local_plane_normal": [
+              0.00022,
+              -0.335058,
+              0.942197
+            ]
+          },
+          {
+            "id": 5,
+            "center_uv": [
+              202.5,
+              356.5
+            ],
+            "corners_uv": {
+              "A": [
+                192.88,
+                346.88
+              ],
+              "B": [
+                212.12,
+                346.88
+              ],
+              "C": [
+                212.12,
+                366.12
+              ],
+              "D": [
+                192.88,
+                366.12
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                202.5,
+                342.9
+              ],
+              "b": [
+                216.1,
+                356.5
+              ],
+              "c": [
+                202.5,
+                370.1
+              ],
+              "d": [
+                188.9,
+                356.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.39,
+              0.389,
+              0.393,
+              0.394,
+              0.389,
+              0.391,
+              0.394,
+              0.392
+            ],
+            "valid_uvs": [
+              [
+                192.88,
+                346.88
+              ],
+              [
+                212.12,
+                346.88
+              ],
+              [
+                212.12,
+                366.12
+              ],
+              [
+                192.88,
+                366.12
+              ],
+              [
+                202.5,
+                342.9
+              ],
+              [
+                216.1,
+                356.5
+              ],
+              [
+                202.5,
+                370.1
+              ],
+              [
+                188.9,
+                356.5
+              ]
+            ],
+            "local_plane_normal": [
+              0.06198,
+              -0.273358,
+              0.959914
+            ]
+          },
+          {
+            "id": 6,
+            "center_uv": [
+              257.91,
+              356.5
+            ],
+            "corners_uv": {
+              "A": [
+                248.66,
+                347.24
+              ],
+              "B": [
+                267.17,
+                347.24
+              ],
+              "C": [
+                267.17,
+                365.76
+              ],
+              "D": [
+                248.66,
+                365.76
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                257.91,
+                343.41
+              ],
+              "b": [
+                271.0,
+                356.5
+              ],
+              "c": [
+                257.91,
+                369.59
+              ],
+              "d": [
+                244.82,
+                356.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.392,
+              0.391,
+              0.396,
+              0.395,
+              0.391,
+              0.393,
+              0.396,
+              0.392
+            ],
+            "valid_uvs": [
+              [
+                248.66,
+                347.24
+              ],
+              [
+                267.17,
+                347.24
+              ],
+              [
+                267.17,
+                365.76
+              ],
+              [
+                248.66,
+                365.76
+              ],
+              [
+                257.91,
+                343.41
+              ],
+              [
+                271.0,
+                356.5
+              ],
+              [
+                257.91,
+                369.59
+              ],
+              [
+                244.82,
+                356.5
+              ]
+            ],
+            "local_plane_normal": [
+              -0.026067,
+              -0.289421,
+              0.956847
+            ]
+          },
+          {
+            "id": 7,
+            "center_uv": [
+              286.5,
+              373.5
+            ],
+            "corners_uv": {
+              "A": [
+                276.88,
+                363.88
+              ],
+              "B": [
+                296.12,
+                363.88
+              ],
+              "C": [
+                296.12,
+                383.12
+              ],
+              "D": [
+                276.88,
+                383.12
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                286.5,
+                359.9
+              ],
+              "b": [
+                300.1,
+                373.5
+              ],
+              "c": [
+                286.5,
+                387.1
+              ],
+              "d": [
+                272.9,
+                373.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.395,
+              0.395,
+              0.399,
+              0.399,
+              0.394,
+              0.397,
+              0.4,
+              0.397
+            ],
+            "valid_uvs": [
+              [
+                276.88,
+                363.88
+              ],
+              [
+                296.12,
+                363.88
+              ],
+              [
+                296.12,
+                383.12
+              ],
+              [
+                276.88,
+                383.12
+              ],
+              [
+                286.5,
+                359.9
+              ],
+              [
+                300.1,
+                373.5
+              ],
+              [
+                286.5,
+                387.1
+              ],
+              [
+                272.9,
+                373.5
+              ]
+            ],
+            "local_plane_normal": [
+              5e-06,
+              -0.293717,
+              0.955892
+            ]
+          },
+          {
+            "id": 8,
+            "center_uv": [
+              322.5,
+              356.25
+            ],
+            "corners_uv": {
+              "A": [
+                312.76,
+                346.51
+              ],
+              "B": [
+                332.24,
+                346.51
+              ],
+              "C": [
+                332.24,
+                365.99
+              ],
+              "D": [
+                312.76,
+                365.99
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                322.5,
+                342.48
+              ],
+              "b": [
+                336.27,
+                356.25
+              ],
+              "c": [
+                322.5,
+                370.02
+              ],
+              "d": [
+                308.73,
+                356.25
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.392,
+              0.392,
+              0.395,
+              0.396,
+              0.391,
+              0.394,
+              0.397,
+              0.393
+            ],
+            "valid_uvs": [
+              [
+                312.76,
+                346.51
+              ],
+              [
+                332.24,
+                346.51
+              ],
+              [
+                332.24,
+                365.99
+              ],
+              [
+                312.76,
+                365.99
+              ],
+              [
+                322.5,
+                342.48
+              ],
+              [
+                336.27,
+                356.25
+              ],
+              [
+                322.5,
+                370.02
+              ],
+              [
+                308.73,
+                356.25
+              ]
+            ],
+            "local_plane_normal": [
+              -0.007451,
+              -0.28095,
+              0.959694
+            ]
+          },
+          {
+            "id": 9,
+            "center_uv": [
+              349.31,
+              373.38
+            ],
+            "corners_uv": {
+              "A": [
+                340.34,
+                364.4
+              ],
+              "B": [
+                358.28,
+                364.4
+              ],
+              "C": [
+                358.28,
+                382.35
+              ],
+              "D": [
+                340.34,
+                382.35
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                349.31,
+                360.69
+              ],
+              "b": [
+                362.0,
+                373.38
+              ],
+              "c": [
+                349.31,
+                386.06
+              ],
+              "d": [
+                336.62,
+                373.38
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.395,
+              0.395,
+              0.401,
+              0.401,
+              0.395,
+              0.397,
+              0.402,
+              0.398
+            ],
+            "valid_uvs": [
+              [
+                340.34,
+                364.4
+              ],
+              [
+                358.28,
+                364.4
+              ],
+              [
+                358.28,
+                382.35
+              ],
+              [
+                340.34,
+                382.35
+              ],
+              [
+                349.31,
+                360.69
+              ],
+              [
+                362.0,
+                373.38
+              ],
+              [
+                349.31,
+                386.06
+              ],
+              [
+                336.62,
+                373.38
+              ]
+            ],
+            "local_plane_normal": [
+              0.025177,
+              -0.393413,
+              0.919017
+            ]
+          },
+          {
+            "id": 10,
+            "center_uv": [
+              377.23,
+              356.5
+            ],
+            "corners_uv": {
+              "A": [
+                367.85,
+                347.12
+              ],
+              "B": [
+                386.62,
+                347.12
+              ],
+              "C": [
+                386.62,
+                365.88
+              ],
+              "D": [
+                367.85,
+                365.88
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                377.23,
+                343.23
+              ],
+              "b": [
+                390.5,
+                356.5
+              ],
+              "c": [
+                377.23,
+                369.77
+              ],
+              "d": [
+                363.96,
+                356.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.392,
+              0.393,
+              0.396,
+              0.395,
+              0.392,
+              0.396,
+              0.397,
+              0.393
+            ],
+            "valid_uvs": [
+              [
+                367.85,
+                347.12
+              ],
+              [
+                386.62,
+                347.12
+              ],
+              [
+                386.62,
+                365.88
+              ],
+              [
+                367.85,
+                365.88
+              ],
+              [
+                377.23,
+                343.23
+              ],
+              [
+                390.5,
+                356.5
+              ],
+              [
+                377.23,
+                369.77
+              ],
+              [
+                363.96,
+                356.5
+              ]
+            ],
+            "local_plane_normal": [
+              -0.117271,
+              -0.24553,
+              0.962269
+            ]
+          },
+          {
+            "id": 11,
+            "center_uv": [
+              404.5,
+              373.5
+            ],
+            "corners_uv": {
+              "A": [
+                394.88,
+                363.88
+              ],
+              "B": [
+                414.12,
+                363.88
+              ],
+              "C": [
+                414.12,
+                383.12
+              ],
+              "D": [
+                394.88,
+                383.12
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                404.5,
+                359.9
+              ],
+              "b": [
+                418.1,
+                373.5
+              ],
+              "c": [
+                404.5,
+                387.1
+              ],
+              "d": [
+                390.9,
+                373.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.396,
+              0.397,
+              0.4,
+              0.4,
+              0.396,
+              0.399,
+              0.4,
+              0.398
+            ],
+            "valid_uvs": [
+              [
+                394.88,
+                363.88
+              ],
+              [
+                414.12,
+                363.88
+              ],
+              [
+                414.12,
+                383.12
+              ],
+              [
+                394.88,
+                383.12
+              ],
+              [
+                404.5,
+                359.9
+              ],
+              [
+                418.1,
+                373.5
+              ],
+              [
+                404.5,
+                387.1
+              ],
+              [
+                390.9,
+                373.5
+              ]
+            ],
+            "local_plane_normal": [
+              -0.044303,
+              -0.231489,
+              0.971828
+            ]
+          },
+          {
+            "id": 12,
+            "center_uv": [
+              433.5,
+              356.5
+            ],
+            "corners_uv": {
+              "A": [
+                423.88,
+                346.88
+              ],
+              "B": [
+                443.12,
+                346.88
+              ],
+              "C": [
+                443.12,
+                366.12
+              ],
+              "D": [
+                423.88,
+                366.12
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                433.5,
+                342.9
+              ],
+              "b": [
+                447.1,
+                356.5
+              ],
+              "c": [
+                433.5,
+                370.1
+              ],
+              "d": [
+                419.9,
+                356.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.394,
+              0.393,
+              0.397,
+              0.397,
+              0.392,
+              0.395,
+              0.398,
+              0.396
+            ],
+            "valid_uvs": [
+              [
+                423.88,
+                346.88
+              ],
+              [
+                443.12,
+                346.88
+              ],
+              [
+                443.12,
+                366.12
+              ],
+              [
+                423.88,
+                366.12
+              ],
+              [
+                433.5,
+                342.9
+              ],
+              [
+                447.1,
+                356.5
+              ],
+              [
+                433.5,
+                370.1
+              ],
+              [
+                419.9,
+                356.5
+              ]
+            ],
+            "local_plane_normal": [
+              0.043884,
+              -0.284089,
+              0.957793
+            ]
+          },
+          {
+            "id": 13,
+            "center_uv": [
+              460.0,
+              373.5
+            ],
+            "corners_uv": {
+              "A": [
+                450.82,
+                364.32
+              ],
+              "B": [
+                469.18,
+                364.32
+              ],
+              "C": [
+                469.18,
+                382.68
+              ],
+              "D": [
+                450.82,
+                382.68
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                460.0,
+                360.52
+              ],
+              "b": [
+                472.98,
+                373.5
+              ],
+              "c": [
+                460.0,
+                386.48
+              ],
+              "d": [
+                447.02,
+                373.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.396,
+              0.396,
+              0.401,
+              0.399,
+              0.396,
+              0.399,
+              0.401,
+              0.398
+            ],
+            "valid_uvs": [
+              [
+                450.82,
+                364.32
+              ],
+              [
+                469.18,
+                364.32
+              ],
+              [
+                469.18,
+                382.68
+              ],
+              [
+                450.82,
+                382.68
+              ],
+              [
+                460.0,
+                360.52
+              ],
+              [
+                472.98,
+                373.5
+              ],
+              [
+                460.0,
+                386.48
+              ],
+              [
+                447.02,
+                373.5
+              ]
+            ],
+            "local_plane_normal": [
+              -0.064098,
+              -0.279744,
+              0.957933
+            ]
+          },
+          {
+            "id": 14,
+            "center_uv": [
+              489.89,
+              355.56
+            ],
+            "corners_uv": {
+              "A": [
+                480.86,
+                346.53
+              ],
+              "B": [
+                498.92,
+                346.53
+              ],
+              "C": [
+                498.92,
+                364.59
+              ],
+              "D": [
+                480.86,
+                364.59
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                489.89,
+                342.8
+              ],
+              "b": [
+                502.65,
+                355.56
+              ],
+              "c": [
+                489.89,
+                368.32
+              ],
+              "d": [
+                477.13,
+                355.56
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.393,
+              0.394,
+              0.399,
+              0.397,
+              0.393,
+              0.397,
+              0.398,
+              0.396
+            ],
+            "valid_uvs": [
+              [
+                480.86,
+                346.53
+              ],
+              [
+                498.92,
+                346.53
+              ],
+              [
+                498.92,
+                364.59
+              ],
+              [
+                480.86,
+                364.59
+              ],
+              [
+                489.89,
+                342.8
+              ],
+              [
+                502.65,
+                355.56
+              ],
+              [
+                489.89,
+                368.32
+              ],
+              [
+                477.13,
+                355.56
+              ]
+            ],
+            "local_plane_normal": [
+              -0.084016,
+              -0.301562,
+              0.949738
+            ]
+          },
+          {
+            "id": 15,
+            "center_uv": [
+              515.5,
+              373.5
+            ],
+            "corners_uv": {
+              "A": [
+                505.88,
+                363.88
+              ],
+              "B": [
+                525.12,
+                363.88
+              ],
+              "C": [
+                525.12,
+                383.12
+              ],
+              "D": [
+                505.88,
+                383.12
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                515.5,
+                359.9
+              ],
+              "b": [
+                529.1,
+                373.5
+              ],
+              "c": [
+                515.5,
+                387.1
+              ],
+              "d": [
+                501.9,
+                373.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.399,
+              0.4,
+              0.402,
+              0.401,
+              0.398,
+              0.401,
+              0.402,
+              0.4
+            ],
+            "valid_uvs": [
+              [
+                505.88,
+                363.88
+              ],
+              [
+                525.12,
+                363.88
+              ],
+              [
+                525.12,
+                383.12
+              ],
+              [
+                505.88,
+                383.12
+              ],
+              [
+                515.5,
+                359.9
+              ],
+              [
+                529.1,
+                373.5
+              ],
+              [
+                515.5,
+                387.1
+              ],
+              [
+                501.9,
+                373.5
+              ]
+            ],
+            "local_plane_normal": [
+              -0.063131,
+              -0.1772,
+              0.982148
+            ]
+          },
+          {
+            "id": 16,
+            "center_uv": [
+              545.5,
+              356.5
+            ],
+            "corners_uv": {
+              "A": [
+                535.58,
+                346.58
+              ],
+              "B": [
+                555.42,
+                346.58
+              ],
+              "C": [
+                555.42,
+                366.42
+              ],
+              "D": [
+                535.58,
+                366.42
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                545.5,
+                342.46
+              ],
+              "b": [
+                559.54,
+                356.5
+              ],
+              "c": [
+                545.5,
+                370.54
+              ],
+              "d": [
+                531.46,
+                356.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.397,
+              0.395,
+              0.4,
+              0.401,
+              0.395,
+              0.397,
+              0.401,
+              0.4
+            ],
+            "valid_uvs": [
+              [
+                535.58,
+                346.58
+              ],
+              [
+                555.42,
+                346.58
+              ],
+              [
+                555.42,
+                366.42
+              ],
+              [
+                535.58,
+                366.42
+              ],
+              [
+                545.5,
+                342.46
+              ],
+              [
+                559.54,
+                356.5
+              ],
+              [
+                545.5,
+                370.54
+              ],
+              [
+                531.46,
+                356.5
+              ]
+            ],
+            "local_plane_normal": [
+              0.129178,
+              -0.313825,
+              0.940652
+            ]
+          },
+          {
+            "id": 17,
+            "center_uv": [
+              571.0,
+              373.5
+            ],
+            "corners_uv": {
+              "A": [
+                561.82,
+                364.32
+              ],
+              "B": [
+                580.18,
+                364.32
+              ],
+              "C": [
+                580.18,
+                382.68
+              ],
+              "D": [
+                561.82,
+                382.68
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                571.0,
+                360.52
+              ],
+              "b": [
+                583.98,
+                373.5
+              ],
+              "c": [
+                571.0,
+                386.48
+              ],
+              "d": [
+                558.02,
+                373.5
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.399,
+              0.399,
+              0.401,
+              0.403,
+              0.399,
+              0.4,
+              0.403,
+              0.401
+            ],
+            "valid_uvs": [
+              [
+                561.82,
+                364.32
+              ],
+              [
+                580.18,
+                364.32
+              ],
+              [
+                580.18,
+                382.68
+              ],
+              [
+                561.82,
+                382.68
+              ],
+              [
+                571.0,
+                360.52
+              ],
+              [
+                583.98,
+                373.5
+              ],
+              [
+                571.0,
+                386.48
+              ],
+              [
+                558.02,
+                373.5
+              ]
+            ],
+            "local_plane_normal": [
+              0.065571,
+              -0.230546,
+              0.97085
+            ]
+          },
+          {
+            "id": 18,
+            "center_uv": [
+              601.82,
+              356.46
+            ],
+            "corners_uv": {
+              "A": [
+                591.62,
+                346.26
+              ],
+              "B": [
+                612.02,
+                346.26
+              ],
+              "C": [
+                612.02,
+                366.66
+              ],
+              "D": [
+                591.62,
+                366.66
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                601.82,
+                342.03
+              ],
+              "b": [
+                616.25,
+                356.46
+              ],
+              "c": [
+                601.82,
+                370.88
+              ],
+              "d": [
+                587.4,
+                356.46
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.395,
+              0.395,
+              0.4,
+              0.4,
+              0.395,
+              0.397,
+              0.401,
+              0.397
+            ],
+            "valid_uvs": [
+              [
+                591.62,
+                346.26
+              ],
+              [
+                612.02,
+                346.26
+              ],
+              [
+                612.02,
+                366.66
+              ],
+              [
+                591.62,
+                366.66
+              ],
+              [
+                601.82,
+                342.03
+              ],
+              [
+                616.25,
+                356.46
+              ],
+              [
+                601.82,
+                370.88
+              ],
+              [
+                587.4,
+                356.46
+              ]
+            ],
+            "local_plane_normal": [
+              -0.0012,
+              -0.311103,
+              0.950375
+            ]
+          },
+          {
+            "id": 19,
+            "center_uv": [
+              625.5,
+              373.0
+            ],
+            "corners_uv": {
+              "A": [
+                615.54,
+                363.04
+              ],
+              "B": [
+                635.46,
+                363.04
+              ],
+              "C": [
+                635.46,
+                382.96
+              ],
+              "D": [
+                615.54,
+                382.96
+              ]
+            },
+            "corners_rot45_uv": {
+              "a": [
+                625.5,
+                358.91
+              ],
+              "b": [
+                639.59,
+                373.0
+              ],
+              "c": [
+                625.5,
+                387.09
+              ],
+              "d": [
+                611.41,
+                373.0
+              ]
+            },
+            "num_valid_corners": 8,
+            "corner_depths_m": [
+              0.399,
+              0.4,
+              0.405,
+              0.404,
+              0.398,
+              0.401,
+              0.406,
+              0.402
+            ],
+            "valid_uvs": [
+              [
+                615.54,
+                363.04
+              ],
+              [
+                635.46,
+                363.04
+              ],
+              [
+                635.46,
+                382.96
+              ],
+              [
+                615.54,
+                382.96
+              ],
+              [
+                625.5,
+                358.91
+              ],
+              [
+                639.59,
+                373.0
+              ],
+              [
+                625.5,
+                387.09
+              ],
+              [
+                611.41,
+                373.0
+              ]
+            ],
+            "local_plane_normal": [
+              -0.011633,
+              -0.349828,
+              0.936742
+            ]
+          }
+        ]
+      },
+      "rotation_method": "holes_parallel_lines_all_holes_square8_plane",
+      "rack_diagnostics": {
+        "x_dot_holes_horizontal": -1.0,
+        "y_dot_camera_up": 0.9566,
+        "z_dot_plane_normal": 1.0
+      },
+      "holes": [
+        {
+          "id": 1,
+          "centroid_uv": [
+            87.19,
+            358.03
+          ],
+          "foreground_pixels": 259,
+          "bbox_xywh": [
+            78,
+            350,
+            20,
+            17
+          ],
+          "aspect_ratio": 0.85,
+          "centroid_pixel": [
+            87.19,
+            358.03
+          ]
+        },
+        {
+          "id": 2,
+          "centroid_uv": [
+            117.61,
+            375.54
+          ],
+          "foreground_pixels": 236,
+          "bbox_xywh": [
+            109,
+            367,
+            18,
+            17
+          ],
+          "aspect_ratio": 0.9444,
+          "centroid_pixel": [
+            117.61,
+            375.54
+          ]
+        },
+        {
+          "id": 3,
+          "centroid_uv": [
+            144.72,
+            357.32
+          ],
+          "foreground_pixels": 237,
+          "bbox_xywh": [
+            136,
+            350,
+            18,
+            17
+          ],
+          "aspect_ratio": 0.9444,
+          "centroid_pixel": [
+            144.72,
+            357.32
+          ]
+        },
+        {
+          "id": 4,
+          "centroid_uv": [
+            174.59,
+            374.77
+          ],
+          "foreground_pixels": 248,
+          "bbox_xywh": [
+            165,
+            367,
+            20,
+            17
+          ],
+          "aspect_ratio": 0.85,
+          "centroid_pixel": [
+            174.59,
+            374.77
+          ]
+        },
+        {
+          "id": 5,
+          "centroid_uv": [
+            202.19,
+            356.72
+          ],
+          "foreground_pixels": 244,
+          "bbox_xywh": [
+            194,
+            349,
+            18,
+            16
+          ],
+          "aspect_ratio": 0.8889,
+          "centroid_pixel": [
+            202.19,
+            356.72
+          ]
+        },
+        {
+          "id": 6,
+          "centroid_uv": [
+            258.06,
+            356.44
+          ],
+          "foreground_pixels": 236,
+          "bbox_xywh": [
+            249,
+            349,
+            18,
+            16
+          ],
+          "aspect_ratio": 0.8889,
+          "centroid_pixel": [
+            258.06,
+            356.44
+          ]
+        },
+        {
+          "id": 7,
+          "centroid_uv": [
+            286.45,
+            373.54
+          ],
+          "foreground_pixels": 239,
+          "bbox_xywh": [
+            278,
+            365,
+            18,
+            17
+          ],
+          "aspect_ratio": 0.9444,
+          "centroid_pixel": [
+            286.45,
+            373.54
+          ]
+        },
+        {
+          "id": 8,
+          "centroid_uv": [
+            322.12,
+            356.35
+          ],
+          "foreground_pixels": 240,
+          "bbox_xywh": [
+            314,
+            349,
+            18,
+            16
+          ],
+          "aspect_ratio": 0.8889,
+          "centroid_pixel": [
+            322.12,
+            356.35
+          ]
+        },
+        {
+          "id": 9,
+          "centroid_uv": [
+            349.22,
+            373.44
+          ],
+          "foreground_pixels": 227,
+          "bbox_xywh": [
+            341,
+            365,
+            17,
+            17
+          ],
+          "aspect_ratio": 1.0,
+          "centroid_pixel": [
+            349.22,
+            373.44
+          ]
+        },
+        {
+          "id": 10,
+          "centroid_uv": [
+            377.36,
+            356.21
+          ],
+          "foreground_pixels": 233,
+          "bbox_xywh": [
+            369,
+            349,
+            18,
+            15
+          ],
+          "aspect_ratio": 0.8333,
+          "centroid_pixel": [
+            377.36,
+            356.21
+          ]
+        },
+        {
+          "id": 11,
+          "centroid_uv": [
+            404.57,
+            373.36
+          ],
+          "foreground_pixels": 244,
+          "bbox_xywh": [
+            396,
+            365,
+            18,
+            17
+          ],
+          "aspect_ratio": 0.9444,
+          "centroid_pixel": [
+            404.57,
+            373.36
+          ]
+        },
+        {
+          "id": 12,
+          "centroid_uv": [
+            433.48,
+            356.22
+          ],
+          "foreground_pixels": 245,
+          "bbox_xywh": [
+            425,
+            349,
+            18,
+            15
+          ],
+          "aspect_ratio": 0.8333,
+          "centroid_pixel": [
+            433.48,
+            356.22
+          ]
+        },
+        {
+          "id": 13,
+          "centroid_uv": [
+            460.19,
+            373.69
+          ],
+          "foreground_pixels": 225,
+          "bbox_xywh": [
+            452,
+            365,
+            17,
+            17
+          ],
+          "aspect_ratio": 1.0,
+          "centroid_pixel": [
+            460.19,
+            373.69
+          ]
+        },
+        {
+          "id": 14,
+          "centroid_uv": [
+            489.75,
+            355.94
+          ],
+          "foreground_pixels": 221,
+          "bbox_xywh": [
+            481,
+            349,
+            17,
+            16
+          ],
+          "aspect_ratio": 0.9412,
+          "centroid_pixel": [
+            489.75,
+            355.94
+          ]
+        },
+        {
+          "id": 15,
+          "centroid_uv": [
+            515.62,
+            373.18
+          ],
+          "foreground_pixels": 242,
+          "bbox_xywh": [
+            507,
+            365,
+            18,
+            17
+          ],
+          "aspect_ratio": 0.9444,
+          "centroid_pixel": [
+            515.62,
+            373.18
+          ]
+        },
+        {
+          "id": 16,
+          "centroid_uv": [
+            546.05,
+            356.46
+          ],
+          "foreground_pixels": 241,
+          "bbox_xywh": [
+            538,
+            349,
+            18,
+            16
+          ],
+          "aspect_ratio": 0.8889,
+          "centroid_pixel": [
+            546.05,
+            356.46
+          ]
+        },
+        {
+          "id": 17,
+          "centroid_uv": [
+            570.82,
+            373.12
+          ],
+          "foreground_pixels": 225,
+          "bbox_xywh": [
+            563,
+            365,
+            17,
+            17
+          ],
+          "aspect_ratio": 1.0,
+          "centroid_pixel": [
+            570.82,
+            373.12
+          ]
+        },
+        {
+          "id": 18,
+          "centroid_uv": [
+            601.18,
+            355.27
+          ],
+          "foreground_pixels": 256,
+          "bbox_xywh": [
+            592,
+            347,
+            20,
+            17
+          ],
+          "aspect_ratio": 0.85,
+          "centroid_pixel": [
+            601.18,
+            355.27
+          ]
+        },
+        {
+          "id": 19,
+          "centroid_uv": [
+            625.39,
+            372.43
+          ],
+          "foreground_pixels": 235,
+          "bbox_xywh": [
+            616,
+            365,
+            20,
+            17
+          ],
+          "aspect_ratio": 0.85,
+          "centroid_pixel": [
+            625.39,
+            372.43
+          ]
+        }
+      ],
+      "hole_line": {
+        "hole_count": 19,
+        "num_valid_depth": 19,
+        "num_inliers": 19,
+        "centroids_uv": [
+          [
+            87.19,
+            358.03
+          ],
+          [
+            117.61,
+            375.54
+          ],
+          [
+            144.72,
+            357.32
+          ],
+          [
+            174.59,
+            374.77
+          ],
+          [
+            202.19,
+            356.72
+          ],
+          [
+            258.06,
+            356.44
+          ],
+          [
+            286.45,
+            373.54
+          ],
+          [
+            322.12,
+            356.35
+          ],
+          [
+            349.22,
+            373.44
+          ],
+          [
+            377.36,
+            356.21
+          ],
+          [
+            404.57,
+            373.36
+          ],
+          [
+            433.48,
+            356.22
+          ],
+          [
+            460.19,
+            373.69
+          ],
+          [
+            489.75,
+            355.94
+          ],
+          [
+            515.62,
+            373.18
+          ],
+          [
+            546.05,
+            356.46
+          ],
+          [
+            570.82,
+            373.12
+          ],
+          [
+            601.18,
+            355.27
+          ],
+          [
+            625.39,
+            372.43
+          ]
+        ],
+        "centroid_depths_m": [
+          0.39,
+          0.394,
+          0.389,
+          0.399,
+          0.391,
+          0.394,
+          0.397,
+          0.391,
+          0.396,
+          0.392,
+          0.399,
+          0.395,
+          0.397,
+          0.397,
+          0.401,
+          0.397,
+          0.397,
+          0.393,
+          0.402
+        ],
+        "inlier_depth_m_median": 0.396,
+        "inlier_depth_m_std": 0.003584,
+        "split": {
+          "split": "pca_perp_gap",
+          "n": 19,
+          "gap_m": 0.008808,
+          "row_top_count": 10,
+          "row_bot_count": 9,
+          "row_spacing_m": 0.012158,
+          "singular_values": [
+            0.470173,
+            0.028493,
+            0.006737
+          ]
+        },
+        "rows": [
+          {
+            "label": "top",
+            "count": 10,
+            "left_uv": [
+              87.19,
+              358.03
+            ],
+            "right_uv": [
+              601.18,
+              355.27
+            ],
+            "fit_left_uv": [
+              87,
+              358
+            ],
+            "fit_right_uv": [
+              599,
+              355
+            ],
+            "origin_m": [
+              0.012145,
+              0.069942,
+              0.3929
+            ],
+            "residual_rms_mm": 1.793,
+            "residual_max_mm": 2.67,
+            "span_px": 514.0
+          },
+          {
+            "label": "bottom",
+            "count": 9,
+            "left_uv": [
+              117.61,
+              375.54
+            ],
+            "right_uv": [
+              625.39,
+              372.43
+            ],
+            "fit_left_uv": [
+              118,
+              375
+            ],
+            "fit_right_uv": [
+              626,
+              373
+            ],
+            "origin_m": [
+              0.040415,
+              0.082099,
+              0.398
+            ],
+            "residual_rms_mm": 1.924,
+            "residual_max_mm": 3.413,
+            "span_px": 507.78
+          }
+        ],
+        "row_top_count": 10,
+        "row_bot_count": 9,
+        "left_uv": [
+          87,
+          358
+        ],
+        "right_uv": [
+          599,
+          355
+        ],
+        "span_px": 514.0,
+        "fit_method": "parallel_lines_3d_joint_svd",
+        "horizontal_camera": [
+          0.999864,
+          -0.001163,
+          0.016464
+        ]
+      },
+      "p1_3d_mm": [
+        -63.36,
+        82.38,
+        396.5
+      ]
+    },
+    "num_holes": 19
+  },
+  "p1": {
+    "position_m": [
+      -0.063363,
+      0.082378,
+      0.3965
+    ],
+    "position_mm": [
+      -63.363,
+      82.378,
+      396.5
+    ],
+    "rotation_matrix": [
+      [
+        -0.999762,
+        0.003687,
+        -0.021482
+      ],
+      [
+        0.002735,
+        -0.956579,
+        -0.291461
+      ],
+      [
+        -0.021624,
+        -0.29145,
+        0.956341
+      ]
+    ],
+    "rotation_euler_zyx_rad": [
+      3.138857,
+      0.021625,
+      -0.295814
+    ]
+  },
+  "sam3_vis_path": "outputs/new_grasp_runs/302dc706_sam3.png",
+  "sam3": {
+    "num_detections": 11,
+    "prompt": "Plastic Reel Connected With Tape",
+    "api_url": "http://127.0.0.1:18003/infer"
+  }
+}

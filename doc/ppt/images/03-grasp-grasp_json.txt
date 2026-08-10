@@ -1,0 +1,66 @@
+{
+  "success": true,
+  "xyzrxryrz": [
+    -63.66,
+    -26.57,
+    360.0,
+    -16.949,
+    1.239,
+    179.843
+  ],
+  "frame": "camera",
+  "preview_frame": "glb_y_up",
+  "axis_hint": "X right, Y down, Z forward (mm)",
+  "unit": {
+    "xyz": "mm",
+    "rx_ry_rz": "deg"
+  },
+  "euler_convention": "ZYX (rz,ry,rx) → displayed as [x,y,z,rx,ry,rz]",
+  "position_mm": [
+    -63.66,
+    -26.57,
+    360.0
+  ],
+  "rpy_deg": {
+    "rx": -16.949,
+    "ry": 1.239,
+    "rz": 179.843
+  },
+  "rotation_matrix": [
+    [
+      -0.999762,
+      0.003687,
+      -0.021482
+    ],
+    [
+      0.002735,
+      -0.956579,
+      -0.291461
+    ],
+    [
+      -0.021624,
+      -0.29145,
+      0.956341
+    ]
+  ],
+  "meta": {
+    "instance_id": 5,
+    "p_i_mm": [
+      -66.52,
+      -26.84,
+      360.0
+    ],
+    "q_i_mm": [
+      -63.66,
+      -26.57,
+      360.0
+    ],
+    "x_dist_mm": 0.79,
+    "num_sphere": 170,
+    "num_band": 51,
+    "radius_mm": 8.0,
+    "y_band_mm": 2.0,
+    "rotation_from": "p1",
+    "role": "gripper_grasp_point"
+  }
+}
