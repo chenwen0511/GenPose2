@@ -1,10 +1,10 @@
 {
   "sam3": {
-    "api_url": "http://127.0.0.1:18003/infer",
+    "api_url": "http://127.0.0.1:18002/infer",
     "timeout_s": 300.0,
     "threshold": 0.41,
     "mask_threshold": 0.50,
-    "default_prompt": "white plastic tray"
+    "default_prompt": "Plastic Reel Connected With Tape"
   },
   "vlm": {
     "missing_prompt": "You are a professional supermarket shelf inspector. Your job is to find out-of-stock goods.\nGoods placement rule: The same goods are placed vertically.\nCheck if there are empty positions with missing goods on the outermost row (the row closest to the shelf edge).\nThe missing goods name is the Chinese name of the goods sitting directly behind that empty outermost position.\nDo not name goods that are already present on the outermost row.\nOnly output the Chinese name of the missing goods.",
