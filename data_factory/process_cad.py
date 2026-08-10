@@ -191,6 +191,7 @@ if __name__ == "__main__":
     # 处理 data_factory 目录下的电子料盘 CAD 文件
     base_dir = os.path.dirname(os.path.abspath(__file__))
     cad_candidates = [
+        os.path.join(base_dir, "smt_tray_01.STEP"),
         os.path.join(base_dir, "smt_tray.PLY"),
         os.path.join(base_dir, "零件1.STEP"),
     ]

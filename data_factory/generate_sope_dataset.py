@@ -2,7 +2,7 @@
 SOPE 格式的 GenPose2 训练/测评数据生成脚本。
 
 输入:
-    data_factory/smt_tray.PLY  或  data_factory/零件1.STEP
+    data_factory/smt_tray_01.STEP / smt_tray.PLY / 零件1.STEP
 
 输出:
     ./trainging/SOPE/000000/{train,test}/Omni6DPose/000000/
@@ -27,6 +27,9 @@ import json
 import argparse
 import numpy as np
 from PIL import Image
+
+# OpenCV 读/写 EXR 需在 import cv2 前开启
+os.environ.setdefault("OPENCV_IO_ENABLE_OPENEXR", "1")
 
 # ============================ 配置 ============================
 # 图像尺寸与相机内参（与 meta.json 对齐）
@@ -56,6 +59,7 @@ def load_mesh(cad_dir="data_factory"):
     """从 data_factory 加载 CAD 模型（PLY 或 STEP），自动合并 Scene 子几何"""
     import trimesh
     candidates = [
+        os.path.join(cad_dir, "smt_tray_01.STEP"),
         os.path.join(cad_dir, "smt_tray.PLY"),
         os.path.join(cad_dir, "零件1.STEP"),
     ]
@@ -75,7 +79,8 @@ def load_mesh(cad_dir="data_factory"):
                     raise RuntimeError(f"无法将 {path} 加载为 Trimesh")
             return mesh
     raise FileNotFoundError(
-        "未在 data_factory 下找到 CAD 文件 (smt_tray.PLY / 零件1.STEP)"
+        "未在 data_factory 下找到 CAD 文件 "
+        "(smt_tray_01.STEP / smt_tray.PLY / 零件1.STEP)"
     )
 
 
@@ -146,13 +151,14 @@ def render_frame(mesh, quat_wxyz, translation, n_samples=N_SURFACE_SAMPLES):
     z = z[valid]
     face_idx = face_idx[valid]
 
-    # 6. Z-buffer: 每像素保留最小深度 (向量化)
-    depth = np.zeros((H, W), dtype=np.float32)
-    mask = np.zeros((H, W), dtype=np.uint8)
+    # 6. Z-buffer: 每像素保留最小深度（初始化为 +inf，否则 min(0, z) 会永远是 0）
+    depth = np.full((H, W), np.inf, dtype=np.float32)
     np.minimum.at(depth, (v, u), z)
-    mask[v, u] = 1  # 实例 ID = 1
+    valid_px = np.isfinite(depth)
+    depth[~valid_px] = 0.0
+    mask = valid_px.astype(np.uint8)  # 实例 ID = 1
 
-    # 7. RGB: 基于法线的 Lambertian 着色（白色塑料外观）
+    # 7. RGB: 基于法线的 Lambertian 着色（白色塑料外观）；仅写最前表面
     base_color = np.array([225.0, 225.0, 225.0], dtype=np.float32)  # 白色
     light_dir = np.array([0.0, 0.0, 1.0], dtype=np.float32)         # 相机正前方打光
 
@@ -162,28 +168,54 @@ def render_frame(mesh, quat_wxyz, translation, n_samples=N_SURFACE_SAMPLES):
     shading = 0.35 + 0.65 * ndotl  # 环境光 + 漫反射
 
     color = np.full((H, W, 3), 64, dtype=np.uint8)            # 深灰色背景
-    obj_color = np.clip(base_color[None, :] * shading[:, None], 0, 255).astype(np.uint8)
-    color[v, u] = obj_color
+    front = np.isclose(z, depth[v, u], rtol=0.0, atol=1e-5)
+    if np.any(front):
+        obj_color = np.clip(
+            base_color[None, :] * shading[front, None], 0, 255
+        ).astype(np.uint8)
+        color[v[front], u[front]] = obj_color
 
     return color, depth, mask
 
 
 # ============================ 文件保存 ============================
 
-def save_exr(path, array):
-    """保存单通道 EXR（优先 imageio，回退 OpenCV）"""
-    try:
-        import imageio
-        imageio.imwrite(path, array)
-        return
-    except ImportError:
-        pass
+def save_exr(path, array, *, is_mask=False):
+    """
+    保存单通道 EXR。
+    - depth: float32，单位米，无效为 0
+    - mask:  按 GenPose2/cutoop 约定写 float32 = instance_id/255
+             （加载时会 *255 还原为 uint8 实例号）
+    """
+    os.environ.setdefault("OPENCV_IO_ENABLE_OPENEXR", "1")
+    to_write = np.asarray(array)
+    if is_mask:
+        to_write = to_write.astype(np.float32) / 255.0
+    else:
+        to_write = to_write.astype(np.float32)
+
     try:
         import cv2
-        cv2.imwrite(path, array)
-    except Exception as e:
-        raise RuntimeError(f"保存 EXR 失败 {path}: {e} (需安装 imageio 或 opencv-python)")
+        if not cv2.imwrite(path, to_write):
+            raise RuntimeError("cv2.imwrite 返回 False")
+        return
+    except Exception as e_cv:
+        pass
 
+    try:
+        import OpenEXR
+        import Imath
+        h, w = to_write.shape[:2]
+        header = OpenEXR.Header(w, h)
+        header["channels"] = {"Y": Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT))}
+        exr = OpenEXR.OutputFile(path, header)
+        exr.writePixels({"Y": to_write.astype(np.float32).tobytes()})
+        exr.close()
+        return
+    except Exception as e_exr:
+        raise RuntimeError(
+            f"保存 EXR 失败 {path}: cv2={e_cv}; OpenEXR={e_exr}"
+        )
 
 def make_meta(quat_wxyz, translation, bbox_side_len):
     """生成 meta.json 内容"""
@@ -271,8 +303,8 @@ def generate_split(mesh, bbox_side_len, split_name, num_frames, training_dir):
 
         prefix = f"{i:06d}"
         Image.fromarray(color).save(os.path.join(split_dir, f"{prefix}_color.png"))
-        save_exr(os.path.join(split_dir, f"{prefix}_depth.exr"), depth)
-        save_exr(os.path.join(split_dir, f"{prefix}_mask.exr"), mask)
+        save_exr(os.path.join(split_dir, f"{prefix}_depth.exr"), depth, is_mask=False)
+        save_exr(os.path.join(split_dir, f"{prefix}_mask.exr"), mask, is_mask=True)
 
         meta = make_meta(quat, trans, bbox_side_len)
         with open(os.path.join(split_dir, f"{prefix}_meta.json"),
@@ -286,6 +318,8 @@ def generate_split(mesh, bbox_side_len, split_name, num_frames, training_dir):
 
 
 def main():
+    global N_SURFACE_SAMPLES
+
     parser = argparse.ArgumentParser(
         description="生成 SOPE 格式的 GenPose2 训练/测评数据"
     )
@@ -304,7 +338,6 @@ def main():
     args = parser.parse_args()
 
     np.random.seed(args.seed)
-    global N_SURFACE_SAMPLES
     N_SURFACE_SAMPLES = args.n_samples
 
     # 1. 加载并中心化 mesh

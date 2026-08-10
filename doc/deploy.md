@@ -14,7 +14,7 @@
 | GPU | NVIDIA，显存 ≥ 8 GB（推荐 12 GB+） |
 | CUDA | 11.8（与 PyTorch 2.1 cu118 匹配） |
 | Python | 3.10.x |
-| 磁盘 | 代码 ~2 GB + 权重 ~250 MB + 运行缓存 |
+| 磁盘 | 代码 ~2 GB + GenPose2 权重 ~250 MB + DINOv2 权重 ~85 MB + 运行缓存 |
 
 ---
 
@@ -96,12 +96,29 @@ pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 \
   --index-url https://download.pytorch.org/whl/cu118
 ```
 
-### 4.2 安装项目依赖
+### 4.2 安装项目依赖（`requirements.txt`）
+
+**务必先装好 PyTorch（4.1），再装本文件**，并用 `--upgrade-strategy only-if-needed`，避免 pip 把 `torch` 升到不匹配的版本。
 
 ```bash
 cd $ROOT
+conda activate genpose2
 pip install -r requirements.txt --upgrade-strategy only-if-needed
 ```
+
+`requirements.txt` 分组说明：
+
+| 分组 | 主要包 | 用途 |
+|------|--------|------|
+| 核心 | `opencv-python`、`numpy`、`scipy`、`open3d`、`tensorboard*` 等 | 训练 / 推理通用 |
+| HTTP | `fastapi`、`uvicorn`、`python-multipart`、`pycocotools` | `http_server.py` |
+| Gradio UI | `gradio`、`trimesh` | `run_ui.py` / `start.sh`（缺则 UI 启动失败） |
+| YOLO | `ultralytics` | 默认分割后端 |
+| 相机 / 实时 | `OpenEXR`、`holodex`、`imageio[ffmpeg]`、`hydra-core`、`iopath` 等 | `runners/infer_camera.py` 等 |
+
+缺包时常见报错示例：`No module named 'gradio'`、`No module named 'trimesh'`。补装后请 `bash start.sh restart`。
+
+离线 / 内网机器：在可联网环境按同样命令装好后，可打包整个 conda 环境，或从已就绪机器拷贝 `site-packages`；**不要**只拷代码而不装依赖。
 
 ### 4.3 编译 pointnet2
 
@@ -119,13 +136,107 @@ sudo apt-get install -y libopenexr-dev
 pip install cutoop
 ```
 
-### 4.5 验证 GPU
+### 4.5 验证 GPU 与关键依赖
 
 ```bash
 python -c "import torch; print('cuda:', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '')"
+python -c "import gradio, trimesh; print('gradio', gradio.__version__, 'trimesh', trimesh.__version__)"
 ```
 
-应输出 `cuda: True` 及 GPU 名称。
+应输出 `cuda: True` 及 GPU 名称；UI 相关 import 无报错即可。
+
+### 4.6 准备 DINOv2（必做，HTTP / Gradio 预加载都会用到）
+
+推理配置默认 `dino=pointwise`，启动时 `networks/posenet.py` 会加载 **DINOv2 ViT-S/14**（`dinov2_vits14`）。
+
+代码逻辑：
+
+1. 若存在本地 hub 目录 `~/.cache/torch/hub/facebookresearch_dinov2_main`，则 `torch.hub.load(..., source='local')`（**不访问 GitHub**）
+2. 否则走 `torch.hub.load('facebookresearch/dinov2', ...)`，需能访问 GitHub，且会再下载权重
+
+权重默认落在：
+
+```text
+~/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth   # 约 84 MB
+```
+
+**内网 / 无外网机器必须事先放好「源码目录 + 权重」**，否则会出现：
+
+```text
+RuntimeError: It looks like there is no internet connection and the repo could not be found in the cache (.../.cache/torch/hub)
+```
+
+#### 方式 A：可访问公网（推荐一次拉齐）
+
+```bash
+HUB="${TORCH_HOME:-$HOME/.cache/torch}/hub"
+# 若未设置 TORCH_HOME，等价于 ~/.cache/torch/hub
+mkdir -p "$HUB/checkpoints"
+
+# 1) hub 源码（目录名必须是 facebookresearch_dinov2_main）
+if [[ ! -f "$HUB/facebookresearch_dinov2_main/hubconf.py" ]]; then
+  git clone --depth 1 https://github.com/facebookresearch/dinov2.git \
+    "$HUB/facebookresearch_dinov2_main"
+fi
+
+# 2) 预训练权重
+CKPT="$HUB/checkpoints/dinov2_vits14_pretrain.pth"
+if [[ ! -f "$CKPT" ]]; then
+  curl -L --retry 3 -o "$CKPT" \
+    "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_pretrain.pth"
+fi
+
+ls -lh "$HUB/facebookresearch_dinov2_main/hubconf.py" "$CKPT"
+```
+
+#### 方式 B：从已就绪机器拷贝（内网常用）
+
+在**已能跑通**的机器上，整目录拷到目标机同一路径（示例用 `scp`）：
+
+```bash
+# 在目标机执行；把 USER@READY_HOST 换成已缓存机器
+mkdir -p ~/.cache/torch/hub/checkpoints
+
+# 权重（约 84 MB）
+scp USER@READY_HOST:~/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth \
+  ~/.cache/torch/hub/checkpoints/
+
+# hub 源码（缺此目录仍会尝试联网）
+scp -r USER@READY_HOST:~/.cache/torch/hub/facebookresearch_dinov2_main \
+  ~/.cache/torch/hub/
+```
+
+也可打包传输：
+
+```bash
+# 源机器
+cd ~/.cache/torch && tar czf dinov2_hub_cache.tgz hub/facebookresearch_dinov2_main hub/checkpoints/dinov2_vits14_pretrain.pth
+
+# 目标机
+mkdir -p ~/.cache/torch
+tar xzf dinov2_hub_cache.tgz -C ~/.cache/torch
+```
+
+#### 校验 DINOv2 本地加载
+
+```bash
+conda activate genpose2
+python - <<'PY'
+import torch
+from pathlib import Path
+hub = Path(torch.hub.get_dir())
+cache = hub / "facebookresearch_dinov2_main"
+ckpt = hub / "checkpoints" / "dinov2_vits14_pretrain.pth"
+assert cache.is_dir() and (cache / "hubconf.py").is_file(), f"missing hub repo: {cache}"
+assert ckpt.is_file() and ckpt.stat().st_size > 1_000_000, f"missing weights: {ckpt}"
+m = torch.hub.load(str(cache), "dinov2_vits14", source="local")
+print("DINOv2 local load OK:", type(m).__name__)
+print("hub_dir:", hub)
+print("ckpt:", ckpt, "size_mb:", round(ckpt.stat().st_size / 1e6, 1))
+PY
+```
+
+> 自定义缓存根目录时设置 `export TORCH_HOME=/path/to/torch_home`（hub 实际目录为 `$TORCH_HOME/hub`）。部署后需保证启动服务的用户能读到该路径。
 
 ---
 
@@ -303,10 +414,12 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 |------|------|
 | `GenPose2 model not loaded` | 检查 `results/ckpts/` 三个 `.pth` 是否存在；看 `logs/http_server.log` 加载报错 |
 | `No module named 'cutoop'` | `pip install cutoop`，并安装 `libopenexr-dev` |
+| `No module named 'gradio'` / `trimesh` | `pip install -r requirements.txt --upgrade-strategy only-if-needed`（见 §4.2） |
+| `no internet connection ... repo could not be found in the cache` | 缺 DINOv2 hub 源码；按 §4.6 放置 `facebookresearch_dinov2_main` + 权重 |
 | pointnet2 编译失败 | 确认 CUDA、gcc 与 PyTorch 版本匹配；在 pointnet2 目录重新 `python setup.py install` |
 | `YOLO returned no segmentation masks` | 未上传 mask 且 YOLO 未检出目标；改上传 mask 或换图/调 YOLO |
 | 位姿明显不准 | 多为 **mask 内 depth 大量为 0**；看返回的 `depth_colormap_path`，目标框内应有彩色有效深度 |
-| 首次推理很慢 | DINO 等可能从 PyTorch Hub 拉预训练；内网需提前缓存或配置 `TORCH_HOME` |
+| 首次推理很慢 / 启动卡在 DINO | 正在从 Hub 拉 DINOv2；内网请按 §4.6 预置缓存，或设置 `TORCH_HOME` |
 | 端口被占用 | 换 `--port 8003` 或 `lsof -i :8002` 查占用 |
 
 ---
@@ -317,9 +430,10 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 - [ ] 企业微盘 `genpose2_weights_results.zip` 已解压到 `results/`  
 - [ ] 三个 `.pth` 校验通过（约 233 MB）  
 - [ ] conda 环境 `genpose2` 已创建  
-- [ ] PyTorch CUDA 可用  
-- [ ] `requirements.txt` 已安装  
+- [ ] PyTorch CUDA 可用（先装 torch，再装 `requirements.txt`）  
+- [ ] `pip install -r requirements.txt --upgrade-strategy only-if-needed` 已完成（含 `gradio` / `trimesh`）  
 - [ ] pointnet2、cutoop 已安装  
+- [ ] DINOv2：`~/.cache/torch/hub/facebookresearch_dinov2_main` + `checkpoints/dinov2_vits14_pretrain.pth` 已就位，本地 load 校验通过（§4.6）  
 - [ ] `python http_server.py` 启动且 `genpose_loaded=true`  
 - [ ] `/health` 与一次 `/infer` 冒烟通过  
 - [ ] （可选）`bash start.sh start` 后 Gradio UI `18090` 可访问；日志在 `logs/`  
