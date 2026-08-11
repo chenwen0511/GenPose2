@@ -188,19 +188,21 @@ def save_exr(path, array, *, is_mask=False):
              （加载时会 *255 还原为 uint8 实例号）
     """
     os.environ.setdefault("OPENCV_IO_ENABLE_OPENEXR", "1")
+    path = str(path)
     to_write = np.asarray(array)
     if is_mask:
         to_write = to_write.astype(np.float32) / 255.0
     else:
         to_write = to_write.astype(np.float32)
 
+    err_cv = None
     try:
         import cv2
         if not cv2.imwrite(path, to_write):
             raise RuntimeError("cv2.imwrite 返回 False")
         return
-    except Exception as e_cv:
-        pass
+    except Exception as e:
+        err_cv = e
 
     try:
         import OpenEXR
@@ -214,18 +216,20 @@ def save_exr(path, array, *, is_mask=False):
         return
     except Exception as e_exr:
         raise RuntimeError(
-            f"保存 EXR 失败 {path}: cv2={e_cv}; OpenEXR={e_exr}"
+            f"保存 EXR 失败 {path}: cv2={err_cv}; OpenEXR={e_exr}"
         )
 
 def make_meta(quat_wxyz, translation, bbox_side_len):
-    """生成 meta.json 内容"""
+    """生成 cutoop 可读的 meta.json（camera.quaternion；objects 以 mask_id 为键）。"""
+    q = quat_wxyz.tolist()
+    t = translation.tolist()
     return {
         "camera": {
             "intrinsics": {
                 "fx": FX, "fy": FY, "cx": CX, "cy": CY,
                 "width": IMG_WIDTH, "height": IMG_HEIGHT,
             },
-            "quaternion_wxyz": [1.0, 0.0, 0.0, 0.0],
+            "quaternion": [1.0, 0.0, 0.0, 0.0],
             "translation": [0.0, 0.0, 0.0],
             "scene_obj_path": "",
             "background_image_path": "",
@@ -233,9 +237,8 @@ def make_meta(quat_wxyz, translation, bbox_side_len):
             "distances": [],
             "kind": "",
         },
-        "objects": [
-            {
-                "mask_id": 1,
+        "objects": {
+            "1": {
                 "meta": {
                     "oid": OID,
                     "class_name": CLASS_NAME,
@@ -245,15 +248,15 @@ def make_meta(quat_wxyz, translation, bbox_side_len):
                     "is_background": False,
                     "bbox_side_len": bbox_side_len,
                 },
-                "quaternion_wxyz": quat_wxyz.tolist(),
-                "translation": translation.tolist(),
+                "quaternion_wxyz": q,
+                "translation": t,
                 "is_valid": True,
                 "id": 1,
                 "material": [],
-                "world_quaternion_wxyz": quat_wxyz.tolist(),
-                "world_translation": translation.tolist(),
+                "world_quaternion_wxyz": q,
+                "world_translation": t,
             }
-        ],
+        },
         "scene_dataset": "Omni6DPose",
         "env_param": {},
         "face_up": True,
@@ -266,22 +269,39 @@ def make_meta(quat_wxyz, translation, bbox_side_len):
 
 
 def make_obj_meta(bbox_side_len):
-    """生成 obj_meta.json 内容（料盘为圆柱体：x/y 轴任意旋转对称）"""
+    """生成 cutoop ObjectMetaData 格式的 obj_meta.json（圆柱对称 x/y: any）。"""
     return {
-        "objects": [
+        "class_list": [
             {
-                "oid": OID,
-                "class_name": CLASS_NAME,
-                "class_label": CLASS_LABEL,
-                "bbox_side_len": bbox_side_len,
-                "symmetry": {
-                    "any": False,
-                    "x": "any",   # 圆柱体：绕 X 轴任意旋转对称
-                    "y": "any",   # 圆柱体：绕 Y 轴任意旋转对称
-                    "z": "none",
-                },
+                "name": CLASS_NAME,
+                "label": CLASS_LABEL,
+                "instance_ids": [OID],
+                "stat": {},
             }
-        ]
+        ],
+        "instance_dict": {
+            OID: {
+                "object_id": OID,
+                "source": "smt_factory",
+                "name": CLASS_NAME,
+                "obj_path": "",
+                "tag": {
+                    "datatype": "train",
+                    "sceneChanger": False,
+                    "symmetry": {
+                        "any": False,
+                        "x": "any",
+                        "y": "any",
+                        "z": "none",
+                    },
+                    "materialOptions": [],
+                    "upAxis": ["z"],
+                },
+                "class_label": CLASS_LABEL,
+                "class_name": CLASS_NAME,
+                "dimensions": bbox_side_len,
+            }
+        },
     }
 
 

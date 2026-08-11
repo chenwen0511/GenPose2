@@ -21,3 +21,6 @@ config/secrets.local.json
 
 datasets/eval_set_real_data_with_shelf_0810
 datasets/train_set_1st_0810
+datasets/ui_display/_glb_cache/
+*.pth
+*.log

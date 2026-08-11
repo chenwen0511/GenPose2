@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""SOPE 训练样本浏览器：RGB / Depth / Mask + meta，← → 切换帧。"""
+"""SOPE 训练样本浏览器：RGB / Depth / Mask + meta + 3D GLB，← → 切换帧。"""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import sys
+import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -18,6 +20,13 @@ os.environ.setdefault("OPENCV_IO_ENABLE_OPENEXR", "1")
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_ROOT = (HERE.parent / "train_set_1st_0810").resolve()
+_REPO = HERE.parents[1]
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from scene_glb import build_or_reuse_frame_glb  # noqa: E402
 
 ARROW_JS = """
 () => {
@@ -154,16 +163,42 @@ def format_meta(meta: Dict[str, Any]) -> str:
         f"{cam.get('width')}x{cam.get('height')}",
         "",
     ]
-    for i, obj in enumerate(meta.get("objects", [])):
-        m = obj.get("meta", {})
-        q = obj.get("quaternion_wxyz", [])
-        t = obj.get("translation", [])
-        lines.append(f"[{i}] mask_id={obj.get('mask_id')} oid={m.get('oid')}")
+    # cutoop: objects 为 {mask_id: {...}}；旧格式为 list
+    raw_objs = meta.get("objects", {})
+    if isinstance(raw_objs, dict):
+        items = [(str(k), v) for k, v in raw_objs.items() if isinstance(v, dict)]
+        items.sort(key=lambda kv: int(kv[0]) if str(kv[0]).isdigit() else 0)
+    elif isinstance(raw_objs, list):
+        items = [
+            (str(o.get("mask_id", i + 1)), o)
+            for i, o in enumerate(raw_objs)
+            if isinstance(o, dict)
+        ]
+    else:
+        items = []
+
+    for mask_id, obj in items:
+        m = obj.get("meta", {}) if isinstance(obj.get("meta"), dict) else {}
+        q = obj.get("quaternion_wxyz", []) or []
+        t = obj.get("translation", []) or []
+        lines.append(f"[mask_id={mask_id}] oid={m.get('oid')}")
         lines.append(f"    class={m.get('class_name')} label={m.get('class_label')}")
         lines.append(f"    bbox_side_len={m.get('bbox_side_len')}")
-        lines.append(f"    quat_wxyz={[round(float(x), 4) for x in q]}")
-        lines.append(f"    translation_m={[round(float(x), 4) for x in t]}")
+        try:
+            q_s = [round(float(x), 4) for x in q]
+            t_s = [round(float(x), 4) for x in t]
+        except (TypeError, ValueError):
+            q_s, t_s = q, t
+        lines.append(f"    quat_wxyz={q_s}")
+        lines.append(f"    translation_m={t_s}")
         lines.append(f"    is_valid={obj.get('is_valid')}")
+        lines.append("")
+    env = meta.get("env_param") or {}
+    if env:
+        lines.append(f"env_param: {env}")
+        lines.append("")
+    if meta.get("comments"):
+        lines.append(f"comments: {meta.get('comments')}")
         lines.append("")
     lines.append("--- raw json ---")
     lines.append(json.dumps(meta, indent=2, ensure_ascii=False))
@@ -198,10 +233,18 @@ def scan_dataset(root: str, split: str) -> Tuple[List[str], str, int, str]:
 
 def load_frame(
     keys: List[str], index: int
-) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray], str, str, int]:
+) -> Tuple[
+    Optional[np.ndarray],
+    Optional[np.ndarray],
+    Optional[np.ndarray],
+    Optional[str],
+    str,
+    str,
+    int,
+]:
     if not keys:
         empty = np.zeros((240, 320, 3), dtype=np.uint8)
-        return empty, empty, empty, "无样本", "0 / 0", 0
+        return empty, empty, empty, None, "无样本", "0 / 0", 0
 
     index = int(np.clip(index, 0, len(keys) - 1))
     _, fid, scene_s = keys[index].split("|", 2)
@@ -216,6 +259,19 @@ def load_frame(
     depth_vis = colorize_depth(depth)
     mask_vis = overlay_mask(rgb, mask)
 
+    glb_path: Optional[str] = None
+    glb_note = ""
+    try:
+        glb_path = build_or_reuse_frame_glb(
+            prefix=prefix,
+            rgb=rgb,
+            depth_m=depth,
+            mask_ids=mask,
+            meta=meta,
+        )
+    except Exception as exc:  # noqa: BLE001
+        glb_note = f"\n[3D GLB 生成失败] {exc}\n{traceback.format_exc(limit=2)}"
+
     fg = int((mask > 0).sum())
     d_fg = depth[mask > 0]
     d_stats = (
@@ -224,14 +280,17 @@ def load_frame(
         if d_fg.size
         else "depth_fg: empty"
     )
+    n_obj = len(meta.get("objects") or {})
     header = (
         f"frame={fid}  scene={scene.name}\n"
         f"path={prefix}_*\n"
-        f"mask_fg_pixels={fg}  {d_stats}\n\n"
+        f"mask_fg_pixels={fg}  objects={n_obj}  {d_stats}\n"
+        f"glb={glb_path or '(failed)'}"
+        f"{glb_note}\n\n"
         f"{format_meta(meta)}"
     )
     status = f"{index + 1} / {len(keys)}   ({fid})"
-    return rgb, depth_vis, mask_vis, header, status, index
+    return rgb, depth_vis, mask_vis, glb_path, header, status, index
 
 
 def step_index(keys: List[str], index: int, delta: int) -> int:
@@ -244,8 +303,10 @@ def build_ui(default_root: Path) -> gr.Blocks:
     with gr.Blocks(title="SOPE Sample Viewer") as demo:
         gr.Markdown(
             "## SOPE 样本浏览器\n"
-            "查看 `color / depth / mask` 与 `meta`。"
+            "查看 `color / depth / mask / meta`，以及 **3D 点云 GLB**"
+            "（相机视锥 + 各料盘位置/姿态轴/包围盒）。"
             "**← / →** 切换上一张 / 下一张（勿在输入框内按）。"
+            "GLB 仅写入 `datasets/ui_display/_glb_cache/`，不改动训练数据。"
         )
 
         with gr.Row():
@@ -282,14 +343,22 @@ def build_ui(default_root: Path) -> gr.Blocks:
             depth_img = gr.Image(label="Depth (伪彩)", type="numpy")
             mask_img = gr.Image(label="Mask 叠加", type="numpy")
 
-        meta_box = gr.Textbox(label="Meta", lines=22, max_lines=40)
+        with gr.Row():
+            glb_view = gr.Model3D(
+                label="3D 点云预览（GLB：点云 + 相机视锥 + 料盘姿态）",
+                clear_color=[0.12, 0.12, 0.14, 1.0],
+                height=520,
+            )
+            glb_file = gr.File(label="下载当前帧 GLB")
+
+        meta_box = gr.Textbox(label="Meta", lines=18, max_lines=40)
 
         keys_state = gr.State([])
         index_state = gr.State(0)
 
         def do_scan(root: str, split: str):
             keys, msg, max_i, resolved = scan_dataset(root, split)
-            rgb, depth_vis, mask_vis, meta_s, st, idx = load_frame(keys, 0)
+            rgb, depth_vis, mask_vis, glb, meta_s, st, idx = load_frame(keys, 0)
             # Gradio Slider 要求 maximum > minimum
             slider_max = max(int(max_i), 1)
             avail = available_splits(Path(root)) or ["train", "test"]
@@ -308,17 +377,19 @@ def build_ui(default_root: Path) -> gr.Blocks:
                 rgb,
                 depth_vis,
                 mask_vis,
+                glb,
+                glb,
                 meta_s,
             )
 
         def do_goto(keys: List[str], index: float):
-            rgb, depth_vis, mask_vis, meta_s, st, idx = load_frame(keys, int(index))
-            return idx, st, rgb, depth_vis, mask_vis, meta_s, gr.update(value=idx)
+            rgb, depth_vis, mask_vis, glb, meta_s, st, idx = load_frame(keys, int(index))
+            return idx, st, rgb, depth_vis, mask_vis, glb, glb, meta_s, gr.update(value=idx)
 
         def do_step(keys: List[str], index: int, delta: int):
             new_i = step_index(keys, index, delta)
-            rgb, depth_vis, mask_vis, meta_s, st, idx = load_frame(keys, new_i)
-            return idx, st, rgb, depth_vis, mask_vis, meta_s, gr.update(value=idx)
+            rgb, depth_vis, mask_vis, glb, meta_s, st, idx = load_frame(keys, new_i)
+            return idx, st, rgb, depth_vis, mask_vis, glb, glb, meta_s, gr.update(value=idx)
 
         outs_scan = [
             keys_state,
@@ -330,6 +401,8 @@ def build_ui(default_root: Path) -> gr.Blocks:
             rgb_img,
             depth_img,
             mask_img,
+            glb_view,
+            glb_file,
             meta_box,
         ]
         outs_nav = [
@@ -338,6 +411,8 @@ def build_ui(default_root: Path) -> gr.Blocks:
             rgb_img,
             depth_img,
             mask_img,
+            glb_view,
+            glb_file,
             meta_box,
             index_slider,
         ]

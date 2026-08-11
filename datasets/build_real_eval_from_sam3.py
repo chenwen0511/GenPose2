@@ -129,7 +129,7 @@ def make_meta(
                 "width": width,
                 "height": height,
             },
-            "quaternion_wxyz": [1.0, 0.0, 0.0, 0.0],
+            "quaternion": [1.0, 0.0, 0.0, 0.0],
             "translation": [0.0, 0.0, 0.0],
             "scene_obj_path": "",
             "background_image_path": "",
@@ -137,9 +137,8 @@ def make_meta(
             "distances": [],
             "kind": "real",
         },
-        "objects": [
-            {
-                "mask_id": 1,
+        "objects": {
+            "1": {
                 "meta": {
                     "oid": OID,
                     "class_name": CLASS_NAME,
@@ -157,7 +156,7 @@ def make_meta(
                 "world_quaternion_wxyz": quat,
                 "world_translation": translation,
             }
-        ],
+        },
         "scene_dataset": "Omni6DPose",
         "env_param": {},
         "face_up": True,
@@ -175,20 +174,37 @@ def make_meta(
 
 def make_obj_meta(bbox_side_len: List[float]) -> Dict[str, Any]:
     return {
-        "objects": [
+        "class_list": [
             {
-                "oid": OID,
-                "class_name": CLASS_NAME,
-                "class_label": CLASS_LABEL,
-                "bbox_side_len": bbox_side_len,
-                "symmetry": {
-                    "any": False,
-                    "x": "any",
-                    "y": "any",
-                    "z": "none",
-                },
+                "name": CLASS_NAME,
+                "label": CLASS_LABEL,
+                "instance_ids": [OID],
+                "stat": {},
             }
-        ]
+        ],
+        "instance_dict": {
+            OID: {
+                "object_id": OID,
+                "source": "smt_factory",
+                "name": CLASS_NAME,
+                "obj_path": "",
+                "tag": {
+                    "datatype": "train",
+                    "sceneChanger": False,
+                    "symmetry": {
+                        "any": False,
+                        "x": "any",
+                        "y": "any",
+                        "z": "none",
+                    },
+                    "materialOptions": [],
+                    "upAxis": ["z"],
+                },
+                "class_label": CLASS_LABEL,
+                "class_name": CLASS_NAME,
+                "dimensions": bbox_side_len,
+            }
+        },
     }
 
 
