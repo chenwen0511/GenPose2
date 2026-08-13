@@ -32,8 +32,12 @@ def get_metrics(pose_1, pose_2, sym_info, pose_mode):
     rot_matrix_2 = get_rot_matrix(rot_2, pose_mode)
     
     bs = pose_1.shape[0]
-    RT_1 = torch.eye(4).unsqueeze(0).repeat([bs, 1, 1])
-    RT_2 = torch.eye(4).unsqueeze(0).repeat([bs, 1, 1])
+    RT_1 = torch.eye(
+        4, dtype=rot_matrix_1.dtype, device=rot_matrix_1.device
+    ).unsqueeze(0).repeat([bs, 1, 1])
+    RT_2 = torch.eye(
+        4, dtype=rot_matrix_2.dtype, device=rot_matrix_2.device
+    ).unsqueeze(0).repeat([bs, 1, 1])
     
     RT_1[:, :3, :3] = rot_matrix_1
     RT_1[:, :3, 3] = trans_1

@@ -1,0 +1,43 @@
+{
+  "class_list": [
+    {
+      "name": "smt_tray",
+      "label": 0,
+      "instance_ids": [
+        "smt_factory-smt_tray-000001"
+      ],
+      "stat": {}
+    }
+  ],
+  "instance_dict": {
+    "smt_factory-smt_tray-000001": {
+      "object_id": "smt_factory-smt_tray-000001",
+      "source": "smt_factory",
+      "name": "smt_tray",
+      "obj_path": "assets/tray_z_normal_v2.obj",
+      "tag": {
+        "datatype": "train",
+        "sceneChanger": false,
+        "symmetry": {
+          "any": false,
+          "x": "none",
+          "y": "none",
+          "z": "any"
+        },
+        "materialOptions": [
+          "uniform_pale_yellow"
+        ],
+        "upAxis": [
+          "z"
+        ]
+      },
+      "class_label": 0,
+      "class_name": "smt_tray",
+      "dimensions": [
+        0.1778,
+        0.1778,
+        0.008
+      ]
+    }
+  }
+}

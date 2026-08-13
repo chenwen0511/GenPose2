@@ -59,6 +59,19 @@ def get_config():
     parser.add_argument('--is_train', default=False, action='store_true')
     parser.add_argument('--perfect_depth', default=False, action='store_true')
     parser.add_argument('--load_per_object', default=False, action='store_true')
+    parser.add_argument(
+        '--symmetry_augment',
+        default=False,
+        action='store_true',
+        help='sample equivalent continuous-symmetry rotations during training',
+    )
+    parser.add_argument(
+        '--smt_eval_model_path',
+        type=str,
+        default='',
+        help='optional canonical OBJ used for ADD-S validation metrics',
+    )
+    parser.add_argument('--smt_object_diameter', type=float, default=0.1778)
     parser.add_argument('--scale_batch_size', type=int, default=64)
     
     
@@ -111,4 +124,3 @@ def get_config():
     assert cfg.dino in ['none', 'global', 'pointwise']
     
     return cfg
-

@@ -24,6 +24,7 @@ from configs.config import get_config
 from utils.misc import get_rot_matrix, get_pose_representation
 from utils.tracking_utils import add_noise_to_R
 from utils.transforms import *
+from utils.symmetry import augment_continuous_symmetry
 
 from cutoop.data_loader import Dataset
 from cutoop.eval_utils import *
@@ -560,7 +561,8 @@ def get_data_loaders_from_cfg(cfg, data_type=['train', 'val', 'test']):
 def process_batch(batch_sample,
                   device,
                   pose_mode='quat_wxyz',
-                  PTS_AUG_PARAMS=None):
+                  PTS_AUG_PARAMS=None,
+                  symmetry_augment=False):
     
     assert pose_mode in ['quat_wxyz', 'quat_xyzw', 'euler_xyz', 'euler_xyz_sx_cx', 'rot_matrix'], \
         f"the rotation mode {pose_mode} is not supported!"
@@ -603,6 +605,11 @@ def process_batch(batch_sample,
         processed_sample['axes_training'] = batch_sample['axes_training'].to(device) # [bs, cbs, 3, 3]
         processed_sample['length_training'] = batch_sample['length_training'].to(device) # [bs, cbs, 3]
 
+    if symmetry_augment:
+        gt_R_da = augment_continuous_symmetry(
+            gt_R_da,
+            batch_sample['sym_info'].to(device),
+        )
     rot = get_pose_representation(gt_R_da, pose_mode)
     location = gt_t_da # [bs, 3]
     processed_sample['gt_pose'] = torch.cat([rot.float(), location.float()], dim=-1)   # [bs, 4/6/3 + 3]

@@ -57,6 +57,7 @@ def train_score(cfg, train_loader, val_loader, test_loader, score_agent, teacher
                 device=cfg.device, 
                 pose_mode=cfg.pose_mode, 
                 PTS_AUG_PARAMS=cfg.PTS_AUG_PARAMS, 
+                symmetry_augment=cfg.symmetry_augment,
             )
             
             ''' train score or energe without feedback'''
@@ -118,6 +119,7 @@ def train_energy(cfg, train_loader, val_loader, test_loader, energy_agent, score
                     device=cfg.device, 
                     pose_mode=cfg.pose_mode, 
                     PTS_AUG_PARAMS=cfg.PTS_AUG_PARAMS, 
+                    symmetry_augment=cfg.symmetry_augment,
                 )
                 
                 ''' get pose samples from pretrained score network '''
@@ -301,5 +303,4 @@ def main():
         train_scale(cfg, train_loader, val_loader, test_loader, tr_agent, score_agent)
 if __name__ == '__main__':
     main()
-
 

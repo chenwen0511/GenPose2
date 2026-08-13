@@ -25,6 +25,7 @@ from utils.genpose_utils import TrainClock, get_pose_dim
 from utils.misc import exists_or_mkdir, average_quaternion_batch, get_pose_representation
 from utils.visualize import create_grid_image, test_time_visulize
 from utils.metrics import get_metrics, get_rot_matrix
+from utils.smt_metrics import get_smt_pose_metrics
 from utils.transforms import *
 
 
@@ -649,6 +650,20 @@ class PoseNet(nn.Module):
             for k, v in length_error.items():
                 if not k == 'item':
                     self.writer.add_scalar(f'{mode}/{sampler_mode}_{k}_length_error', v, self.clock.epoch)
+
+        for metric_name in ['normal_error_deg', 'adds_m']:
+            if metric_name in metric:
+                for k, v in metric[metric_name].items():
+                    if k != 'item':
+                        self.writer.add_scalar(
+                            f'{mode}/{sampler_mode}_{k}_{metric_name}', v, self.clock.epoch
+                        )
+
+        if 'smt_accuracy' in metric:
+            for k, v in metric['smt_accuracy'].items():
+                self.writer.add_scalar(
+                    f'{mode}/{sampler_mode}_{k}', v, self.clock.epoch
+                )
  
 
     def record_lr(self):
@@ -696,8 +711,17 @@ class PoseNet(nn.Module):
             'median': np.median(trans_error),
             'item': trans_error,
         }
-        return {'rot_error': rot_error,
-                'trans_error': trans_error}
+        metric = {'rot_error': rot_error, 'trans_error': trans_error}
+        if self.cfg.smt_eval_model_path:
+            metric.update(get_smt_pose_metrics(
+                pred_pose.type_as(gt_pose),
+                gt_pose,
+                sym_info,
+                pose_mode=self.cfg.pose_mode,
+                model_path=self.cfg.smt_eval_model_path,
+                object_diameter=self.cfg.smt_object_diameter,
+            ))
+        return metric
 
     def collect_length_metric(self, pred_length, gt_length):
         length_error = torch.norm(pred_length - gt_length, dim=1).cpu().numpy()

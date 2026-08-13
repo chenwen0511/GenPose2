@@ -3,7 +3,8 @@ set -euo pipefail
 
 ROOT=/data/quinn/smt
 REPO="$ROOT/GenPose2"
-DATA_PATH="${DATA_PATH:-$ROOT/datasets/genpose2_smt_train_v1}"
+DATA_PATH="${DATA_PATH:-$ROOT/datasets/genpose2_smt_train_v2_20260813/SOPE}"
+MODEL_PATH="${SMT_EVAL_MODEL_PATH:-$REPO/assets/tray_z_normal_v2.obj}"
 SCORE_CKPT="${SCORE_CKPT:-}"
 LOG_DIR="${LOG_DIR:-EnergyNet_smt_v1}"
 GPU="${CUDA_VISIBLE_DEVICES:-0}"
@@ -14,6 +15,7 @@ WORKERS="${NUM_WORKERS:-8}"
 test -d "$REPO"
 test -d "$DATA_PATH"
 test -f "$REPO/configs/obj_meta.json"
+test -f "$MODEL_PATH"
 if [ -z "$SCORE_CKPT" ] || [ ! -s "$SCORE_CKPT" ]; then
   echo "SCORE_CKPT must point to a non-empty final ScoreNet checkpoint" >&2
   exit 2
@@ -32,7 +34,7 @@ mkdir -p "$ROOT/logs" "$ROOT/results/ckpts" "$ROOT/results/logs"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export OPENCV_IO_ENABLE_OPENEXR=1
 
-"$PY" "$ROOT/scripts/preflight_dataset.py" "$DATA_PATH" \
+"$PY" "$REPO/scripts/smt/validate_smt_dataset_v2.py" "$(dirname "$DATA_PATH")" \
   > "$ROOT/validation/preflight_energy_$(date +%Y%m%d_%H%M%S).json"
 
 exec "$PY" runners/trainer.py \
@@ -51,6 +53,9 @@ exec "$PY" runners/trainer.py \
   --seed 0 \
   --is_train \
   --load_per_object \
+  --symmetry_augment \
+  --smt_eval_model_path "$MODEL_PATH" \
+  --smt_object_diameter 0.1778 \
   --pose_mode rot_matrix \
   --regression_head Rx_Ry_and_T \
   --pts_encoder pointnet2 \
