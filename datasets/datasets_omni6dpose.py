@@ -83,7 +83,7 @@ class Omni6DPoseDataSet(data.Dataset):
         '''
 
         assert source in ['ikea', 'matterport3d', 'scannet++', 'Omni6DPose']
-        assert mode in ['train', 'test', 'real']
+        assert mode in ['train', 'val', 'test', 'real']
 
         self.cfg = cfg
         self.source = source
@@ -528,7 +528,7 @@ def get_data_loaders_from_cfg(cfg, data_type=['train', 'val', 'test']):
             percentage_data=cfg.percentage_data_for_val,            
             data_path=cfg.data_path,
             source=cfg.val_source,
-            mode='test',
+            mode='val',
             n_pts=cfg.num_points,
             img_size=cfg.img_size,
             per_obj=cfg.per_obj,
