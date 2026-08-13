@@ -39,7 +39,7 @@
   /* ============ Deck 容器 + 翻页 ============ */
   /* width: NSLIDES * 100vw，会在 JS 里动态矫正 */
   #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
-  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:6vh 6vw 10vh 6vw;display:flex;flex-direction:column;overflow:hidden}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:4.2vh 5vw 7vh 5vw;display:flex;flex-direction:column;overflow:hidden}
   .slide.light{color:var(--ink);background:var(--paper)}
   .slide.dark{color:var(--paper);background:var(--ink)}
 
@@ -71,7 +71,7 @@
      · 非衬线（Noto Sans SC）：正文描述、body、补充说明
      · 等宽（IBM Plex Mono）：kicker、meta 小标签、foot 右侧
   */
-  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:2.6vh}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:1.2vh}
   .display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:.92;letter-spacing:-.025em}
   .display-zh{font-family:var(--serif-zh);font-weight:700;font-size:7.8vw;line-height:1.04;letter-spacing:-.005em}
   .h1-zh{font-family:var(--serif-zh);font-weight:700;font-size:4.6vw;line-height:1.12;letter-spacing:-.005em}
@@ -90,10 +90,10 @@
   /* ============ 布局工具 ============ */
   .col{display:flex;flex-direction:column;gap:2.4vh}
   .row{display:flex;align-items:center;gap:3vw}
-  .grid-6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:4vw 6vw;flex:1;align-content:center;padding:2vh 0}
-  .grid-9{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3vh 4vw;flex:1;align-content:center}
-  .grid-4{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:4vh 6vw;flex:1;align-content:center}
-  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:4vw;flex:1;align-content:center}
+  .grid-6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:2vh 3vw;flex:1;min-height:0;align-content:center;padding:1vh 0}
+  .grid-9{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2vh 3vw;flex:1;min-height:0;align-content:center}
+  .grid-4{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:2.5vh 4vw;flex:1;min-height:0;align-content:center}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5vw;flex:1;min-height:0;align-content:center}
   .split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;flex:1;align-items:center}
   .split-55{display:grid;grid-template-columns:55fr 45fr;gap:5vw;flex:1;align-items:stretch}
   .fill{flex:1}
@@ -177,6 +177,19 @@
   .frame-img.h-22{height:22vh}
   .frame-img.h-26{height:26vh}
   .frame-img.h-28{height:28vh}
+  .frame-img.arch-diagram{flex:1 1 auto;min-height:0;height:auto;max-height:none;background:transparent;border:1px solid rgba(10,31,61,.12);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .frame-img.arch-diagram > img{object-fit:contain;object-position:center;width:100%;height:100%;max-height:100%;display:block}
+  .slide.dark .frame-img.arch-diagram{border-color:rgba(241,243,245,.18);background:rgba(255,255,255,.03)}
+  /* 架构图页：标题更小，图吃掉剩余高度，避免半截裁切 */
+  .slide.diagram-slide{padding-top:3.2vh;padding-bottom:6vh}
+  .slide.diagram-slide .h-xl{font-size:min(3.4vw,5vh);line-height:1.1}
+  .slide.diagram-slide .kicker{margin-bottom:.6vh}
+  .slide.diagram-slide .frame{padding-top:.4vh!important;gap:.8vh}
+  .slide.diagram-slide .arch-diagram{margin-top:0!important;flex:1 1 0}
+  /* 内容偏密的正文页：收紧上下留白 */
+  .slide.dense .frame{padding-top:1.2vh!important}
+  .slide.dense .callout{margin-top:1.6vh!important;padding:1.6vh 1.6vw}
+  .slide.dense .pipeline-section{padding-top:1.2vh}
   .frame-cap{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;margin-top:.8vh;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.72}
   .frame-cap .pf{font-family:var(--serif-zh);font-weight:600;font-size:max(13px,1vw);letter-spacing:.04em;text-transform:none;opacity:.94}
   .frame-cap .nb{font-family:var(--serif-en);font-style:italic;font-size:max(15px,1.2vw);letter-spacing:.02em;text-transform:none;opacity:.88}
@@ -222,7 +235,7 @@
   .h-xl{
     font-family:var(--serif-zh);
     font-weight:700;
-    font-size:6.2vw;
+    font-size:min(5.2vw,7.2vh);
     line-height:1.08;
     letter-spacing:-.01em;
   }
@@ -314,14 +327,14 @@
 
   /* ---------- pipeline（流水线） ---------- */
   .pipeline-section{
-    margin-top:4.4vh;
-    padding-top:2.8vh;
+    margin-top:2vh;
+    padding-top:1.4vh;
     border-top:1px dashed rgba(127,127,127,.32);
   }
   .pipeline-section:first-of-type{
     border-top:0;
     padding-top:0;
-    margin-top:3vh;
+    margin-top:1.6vh;
   }
   .pipeline-label{
     font-family:var(--mono);
@@ -378,7 +391,8 @@
     display:grid;
     grid-template-columns:repeat(3,1fr);
     grid-auto-rows:minmax(0,1fr);
-    gap:2.4vh 2vw;
+    gap:1.4vh 1.6vw;
+    min-height:0;
   }
   /* grid-6 已在旧样式里定义为 3x2，这里仅补 align */
 
@@ -477,7 +491,7 @@
 <div id="deck">
 
 <!-- ============================================================
-     SLIDES 插入区 · 在此处填充所有 <section class="slide ..."> 页面
+     SLIDES 插入区 · 在此处填充所有 slide section 页面
      每页模板参考 references/page-patterns.md
      页面组件参考 references/components.md
      ============================================================ -->
@@ -506,12 +520,12 @@
 </section>
 
 <!-- 02 · Hook -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Scene · Why Retrain</div>
-    <div>03 / 28</div>
+    <div>02 / 28</div>
   </div>
-  <div class="frame grid-2-7-5" style="padding-top:5vh">
+  <div class="frame grid-2-7-5" style="padding-top:1.5vh">
     <div style="display:flex; flex-direction:column; justify-content:space-between; gap:2.5vh">
       <div>
         <div class="kicker" data-anim>先抛结论</div>
@@ -543,27 +557,27 @@
         </div>
       </div>
     </div>
-    <figure class="frame-img r-4x3" style="margin-top:7vh; max-height:52vh" data-anim>
+    <figure class="frame-img r-4x3" style="margin-top:2vh; max-height:48vh" data-anim>
       <img src="images/02-tray-front.png" alt="电子料盘正对货架，仅见前半部分">
       <figcaption class="img-cap">实拍 · 正对货架 · 只见料盘前半</figcaption>
     </figure>
   </div>
   <div class="foot">
-    <div>Page 03 · 场景难点</div>
+    <div>Page 02 · 场景难点</div>
     <div>Front half only</div>
   </div>
 </section>
 
 <!-- 03 · Contrast -->
-<section class="slide dark" data-animate="directional">
+<section class="slide dense dark" data-animate="directional">
   <div class="chrome">
     <div>Strategy · Shift</div>
-    <div>04 / 28</div>
+    <div>03 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>Before / After</div>
     <h2 class="h-xl" style="margin-bottom:4vh; white-space:nowrap" data-anim>路线对比</h2>
-    <div class="grid-2-6-6" style="gap:5vw 4vh">
+    <div class="grid-2-6-6" style="gap:3vw 2.5vh">
       <div data-anim="left" style="padding:3vh 2vw; border-left:3px solid currentColor; opacity:.55">
         <div class="kicker" style="opacity:.9">Before · 通用路线</div>
         <h3 class="h-md" style="margin-top:2vh">微调官方权重</h3>
@@ -587,53 +601,53 @@
     </div>
   </div>
   <div class="foot">
-    <div>Page 04 · 策略选择</div>
+    <div>Page 03 · 策略选择</div>
     <div>Not fine-tune</div>
   </div>
 </section>
 
 
 <!-- 04 · Real data evidence -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Evidence · 20260720_114256</div>
-    <div>05 / 28</div>
+    <div>04 / 28</div>
   </div>
-  <div class="frame" style="padding-top:4vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>抓取位姿页签验证 · RGB / Depth / Mask / K / 点云</div>
     <h2 class="h-xl" style="white-space:nowrap; font-size:min(4.8vw,8vh)" data-anim>实拍四件套</h2>
-    <div class="grid-3-3" style="margin-top:2.5vh">
-      <figure class="frame-img" style="height:22vh" data-anim>
+    <div class="grid-3-3" style="margin-top:1.2vh; gap:1.2vh 1.4vw">
+      <figure class="frame-img" style="height:18vh" data-anim>
         <img src="images/03-rgb.png" alt="RGB">
         <figcaption class="img-cap">RGB · 640×480</figcaption>
       </figure>
-      <figure class="frame-img" style="height:22vh" data-anim>
+      <figure class="frame-img" style="height:18vh" data-anim>
         <img src="images/03-grasp-depth_vis.png" alt="Depth">
         <figcaption class="img-cap">Depth · 伪彩（传感器）</figcaption>
       </figure>
-      <figure class="frame-img" style="height:22vh" data-anim>
+      <figure class="frame-img" style="height:18vh" data-anim>
         <img src="images/03-grasp-mask.png" alt="Mask">
         <figcaption class="img-cap">SAM3 Mask · 11 实例</figcaption>
       </figure>
-      <figure class="frame-img" style="height:22vh" data-anim>
+      <figure class="frame-img" style="height:18vh" data-anim>
         <img src="images/03-colored-pc.png" alt="Colored PC">
         <figcaption class="img-cap">彩色点云 · 前半盘面</figcaption>
       </figure>
-      <figure class="frame-img" style="height:22vh" data-anim>
+      <figure class="frame-img" style="height:18vh" data-anim>
         <img src="images/03-grasp-p1_qi.png" alt="Grasp">
         <figcaption class="img-cap">P1 + 抓取点 q_i</figcaption>
       </figure>
-      <figure class="frame-img" style="height:22vh" data-anim>
+      <figure class="frame-img" style="height:18vh" data-anim>
         <img src="images/03-camera-k.png" alt="K">
         <figcaption class="img-cap">内参 K · fx≈608</figcaption>
       </figure>
     </div>
-    <div class="callout" style="margin-top:2.5vh; max-width:78vw" data-anim>
+    <div class="callout" style="margin-top:1.4vh; max-width:78vw" data-anim>
       验证通过：彩色实例点云 GLB/PLY 已出；抓取位姿 xyzrxryrz ≈ [-63.7, -26.6, 360.0, -16.9°, 1.2°, 179.8°]（mm / °）。这些图可直接讲「模型吃什么、吐什么」。
     </div>
   </div>
   <div class="foot">
-    <div>Page 05 · VLM_Assisted_PEM · 抓取位姿</div>
+    <div>Page 04 · VLM_Assisted_PEM · 抓取位姿</div>
     <div>newshelf 20260720</div>
   </div>
 </section>
@@ -642,7 +656,7 @@
 <section class="slide hero light">
   <div class="chrome">
     <div>Act I · Model Primer</div>
-    <div>06 / 28</div>
+    <div>05 / 28</div>
   </div>
   <div class="frame" style="display:grid; gap:5vh; align-content:center; min-height:80vh">
     <div class="kicker" data-anim>Act I</div>
@@ -658,12 +672,12 @@
 </section>
 
 <!-- 06 · What is GenPose2 -->
-<section class="slide dark">
+<section class="slide dense dark">
   <div class="chrome">
     <div>Model · What It Is</div>
-    <div>07 / 28</div>
+    <div>06 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>实例级 6D + 尺寸</div>
     <h2 class="h-xl" style="white-space:nowrap; font-size:min(5.4vw,9vh)" data-anim>它做什么</h2>
     <p class="lead" style="max-width:64vw; margin-bottom:3.5vh" data-anim>
@@ -689,23 +703,23 @@
         </ul>
       </div>
     </div>
-    <div class="callout" style="margin-top:4vh; max-width:72vw" data-anim>
+    <div class="callout" style="margin-top:2vh; max-width:72vw" data-anim>
       关键直觉：位姿不是「算一个数」，而是从「在当前点云下，哪些姿态更像真的」这一<strong>概率分布</strong>里<strong>采样</strong>出来的。
     </div>
   </div>
   <div class="foot">
-    <div>Page 07 · System I/O</div>
+    <div>Page 06 · System I/O</div>
     <div>Distribution first</div>
   </div>
 </section>
 
 <!-- 07 · Why score not regression -->
-<section class="slide light" data-animate="directional">
+<section class="slide dense light" data-animate="directional">
   <div class="chrome">
     <div>Model · Why Score</div>
-    <div>08 / 28</div>
+    <div>07 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>分布像地形 · 常有多座山</div>
     <h2 class="h-xl" style="margin-bottom:3.5vh; white-space:nowrap" data-anim>为何不回归</h2>
     <div class="grid-2-6-6" style="gap:4vw 3vh">
@@ -732,18 +746,18 @@
     </div>
   </div>
   <div class="foot">
-    <div>Page 08 · Multi-modal Pose</div>
+    <div>Page 07 · Multi-modal Pose</div>
     <div>Map then climb</div>
   </div>
 </section>
 
 <!-- 08 · Distribution colloquial -->
-<section class="slide dark">
+<section class="slide dense dark">
   <div class="chrome">
     <div>Diffusion · Distribution</div>
-    <div>09 / 28</div>
+    <div>08 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>三个词 · 先记分布</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>什么是分布</h2>
     <p class="lead" style="max-width:68vw; margin-bottom:3.5vh" data-anim>
@@ -766,23 +780,23 @@
         <div class="stat-note">对称圆盘常见两座山</div>
       </div>
     </div>
-    <div class="callout" style="margin-top:4vh; max-width:70vw" data-anim>
+    <div class="callout" style="margin-top:2vh; max-width:70vw" data-anim>
       料盘只见前半盘面时：平移 / 倾角往往一座山；绕法向自转则是一整圈「等高」——分布在那个方向上是平的。
     </div>
   </div>
   <div class="foot">
-    <div>Page 09 · Distribution</div>
+    <div>Page 08 · Distribution</div>
     <div>Terrain map</div>
   </div>
 </section>
 
 <!-- 09 · Diffusion + sampling colloquial -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Diffusion · Noise &amp; Sample</div>
-    <div>10 / 28</div>
+    <div>09 / 28</div>
   </div>
-  <div class="frame" style="padding-top:4.5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>扩散 · 加雾与除雾</div>
     <h2 class="h-xl" style="white-space:nowrap; font-size:min(5.2vw,9vh)" data-anim>扩散与采样</h2>
     <div class="grid-2-6-6" style="gap:3vw 2.5vh; margin-top:3vh">
@@ -805,21 +819,21 @@
         </ul>
       </div>
     </div>
-    <div class="callout" style="margin-top:3.5vh; max-width:74vw" data-anim>
+    <div class="callout" style="margin-top:2vh; max-width:74vw" data-anim>
       一句话：<strong>扩散</strong>是训练时把答案搅糊；<strong>采样</strong>是推理时从糊里走回清晰姿态。<strong>Score</strong> 就是「每一步该往哪挪」。
     </div>
   </div>
   <div class="foot">
-    <div>Page 10 · Diffuse then Sample</div>
+    <div>Page 09 · Diffuse then Sample</div>
     <div>Fog ↔ clear</div>
   </div>
 </section>
 
 <!-- 10 · Three nets overview -->
-<section class="slide dark" data-animate="pipeline">
+<section class="slide dense dark" data-animate="pipeline">
   <div class="chrome">
     <div>Model · Three Nets</div>
-    <div>11 / 28</div>
+    <div>10 / 28</div>
   </div>
   <div class="frame">
     <div class="kicker">一句话分工</div>
@@ -844,95 +858,75 @@
         </div>
       </div>
     </div>
-    <div class="callout" style="margin-top:3vh; max-width:70vw" data-anim>
+    <div class="callout" style="margin-top:1.6vh; max-width:70vw" data-anim>
       接上页：Score 负责在分布上<strong>采样登山</strong>；Energy 看你停在哪座山更可信；Scale 只量这座山上的框有多大。
     </div>
   </div>
   <div class="foot">
-    <div>Page 11 · Roles</div>
+    <div>Page 10 · Roles</div>
     <div>按 → 点亮</div>
   </div>
 </section>
 
-<!-- 11 · ScoreNet structure -->
-<section class="slide light">
+<!-- Architecture Overview (paper Fig.2 + GenPose2) -->
+<section class="slide light diagram-slide">
   <div class="chrome">
-    <div>Structure · ScoreNet</div>
-    <div>12 / 28</div>
+    <div>Structure · Overview</div>
+    <div>11 / 28</div>
   </div>
-  <div class="frame" style="padding-top:4vh">
-    <div class="kicker" data-anim>结构 = 坡度仪 + 登山向导</div>
-    <h2 class="h-xl" style="white-space:nowrap" data-anim>Score 结构</h2>
-    <div class="grid-2-6-6" style="gap:3vw 2vh; margin-top:2.5vh">
-      <div data-anim>
-        <div class="kicker">骨干 · 看地形</div>
-        <ul style="margin-top:1.5vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.2vh; font-family:var(--sans-zh); font-size:max(14px,1.0vw); line-height:1.45">
-          <li>ROI RGB → DINOv2（外观）</li>
-          <li>点云 → PointNet++（几何）</li>
-          <li>融成 pts_feat：这片「山」的条件</li>
-          <li>位姿 9 维 = 地图上的坐标</li>
-        </ul>
-      </div>
-      <div data-anim>
-        <div class="kicker">头 + 采样 · 走路</div>
-        <ul style="margin-top:1.5vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.2vh; font-family:var(--sans-zh); font-size:max(14px,1.0vw); line-height:1.45">
-          <li>输入：当前糊位姿 + 噪声级别 t</li>
-          <li>输出：score = 下一步该往哪挪</li>
-          <li>ODE 反复调用 = 一步步除雾</li>
-          <li>重复 K=50 次 = 50 条登山路径</li>
-        </ul>
-      </div>
-    </div>
-    <div class="callout" style="margin-top:3vh; max-width:74vw" data-anim>
-      采样时间线：t 大（整屏雾 / 纯噪声）→ t 中（依稀靠近物体）→ t→0（贴合点云的清晰 6D）。换随机种子 = 换一条路，可能爬上另一座峰。
-    </div>
+  <div class="frame" style="padding-top:0.5vh">
+    <div class="kicker" data-anim>arXiv:2306.10531 Fig.2 · GenPose2 扩展</div>
+    <h2 class="h-xl" style="white-space:nowrap" data-anim>模型结构总览</h2>
+    <figure class="frame-img arch-diagram" data-anim>
+      <img src="images/arch-overview.png" alt="GenPose2 architecture overview">
+    </figure>
   </div>
   <div class="foot">
-    <div>Page 12 · scorenet.py</div>
-    <div>Guide on the map</div>
+    <div>Page 11 · DINOv2 + PointNet++ + Score / Energy / Scale</div>
+    <div>paper §3</div>
   </div>
 </section>
 
-<!-- 12 · Energy + Scale structure -->
-<section class="slide dark">
+<!-- ScoreNet / EnergyNet internal -->
+<section class="slide light diagram-slide">
   <div class="chrome">
-    <div>Structure · Energy &amp; Scale</div>
-    <div>13 / 28</div>
+    <div>Structure · Score / Energy Block</div>
+    <div>12 / 28</div>
   </div>
-  <div class="frame" style="padding-top:4.5vh">
-    <div class="kicker" data-anim>筛选 + 尺寸</div>
-    <h2 class="h-xl" style="white-space:nowrap; font-size:min(5vw,8.5vh)" data-anim>Energy / Scale</h2>
-    <div class="grid-2-6-6" style="gap:3vw 2.5vh; margin-top:3vh">
-      <div data-anim style="padding:2.2vh 1.8vw; border-left:3px solid currentColor">
-        <div class="kicker">EnergyNet · 同构异训</div>
-        <ul style="margin-top:1.6vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.2vh; font-family:var(--sans-zh); font-size:max(13px,0.98vw); line-height:1.45">
-          <li>结构几乎同 ScoreNet</li>
-          <li>给每个候选打 rot / trans 能量分</li>
-          <li>本仓库：能量越高越优先</li>
-          <li>retain_ratio=0.4 裁掉后 60%</li>
-          <li>四元数平均；可选 DBSCAN</li>
-        </ul>
-      </div>
-      <div data-anim style="padding:2.2vh 1.8vw; border-left:3px solid currentColor">
-        <div class="kicker">ScaleNet · 小回归头</div>
-        <ul style="margin-top:1.6vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.2vh; font-family:var(--sans-zh); font-size:max(13px,0.98vw); line-height:1.45">
-          <li>输入：pts_feat + 已定 axes</li>
-          <li>输出：[l,w,h]，不参与扩散</li>
-          <li>~5 MB，远小于 Score/Energy</li>
-          <li>轴向错了尺寸会对错轴</li>
-          <li>料盘型号固定 → 可写死跳过</li>
-        </ul>
-      </div>
-    </div>
+  <div class="frame" style="padding-top:0.5vh">
+    <div class="kicker" data-anim>PoseScoreNet Φθ · PoseEnergyNet Ψφ 同构</div>
+    <h2 class="h-xl" style="white-space:nowrap" data-anim>网络内部结构</h2>
+    <figure class="frame-img arch-diagram" data-anim>
+      <img src="images/arch-detail.png" alt="ScoreNet EnergyNet internal blocks">
+    </figure>
   </div>
   <div class="foot">
-    <div>Page 13 · energynet / scalenet</div>
-    <div>Sort then aggregate</div>
+    <div>Page 12 · scorenet.py / energynet.py</div>
+    <div>Rx · Ry · T · DSM</div>
+  </div>
+</section>
+
+<!-- Energy aggregation + ScaleNet -->
+<section class="slide dark diagram-slide">
+  <div class="chrome">
+    <div>Structure · Aggregate &amp; Scale</div>
+    <div>13 / 28</div>
+  </div>
+  <div class="frame" style="padding-top:0.5vh">
+    <div class="kicker" data-anim>论文 §3.2 聚合 + GenPose2 尺寸头</div>
+    <h2 class="h-xl" style="white-space:nowrap" data-anim>Energy 聚合 · Scale</h2>
+    <figure class="frame-img arch-diagram" data-anim>
+      <img src="images/arch-energy-scale.png" alt="Energy aggregation and ScaleNet">
+    </figure>
+  </div>
+  <div class="foot">
+    <div>Page 13 · retain 40% · size_3d</div>
+    <div>料盘可写死尺寸</div>
   </div>
 </section>
 
 <!-- 13 · Inference walkthrough -->
-<section class="slide light" data-animate="pipeline">
+<section class="slide dense light" data-animate="pipeline">
   <div class="chrome">
     <div>Inference · Walkthrough</div>
     <div>14 / 28</div>
@@ -981,15 +975,15 @@
 </section>
 
 <!-- 14 · Defaults -->
-<section class="slide dark">
+<section class="slide dense dark">
   <div class="chrome">
     <div>Inference · Defaults</div>
     <div>15 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>开箱默认 · 速查</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>关键配置</h2>
-    <div class="grid-6" style="margin-top:4vh">
+    <div class="grid-6" style="margin-top:2vh">
       <div class="stat-card" data-anim>
         <div class="stat-label">pose_mode</div>
         <div class="stat-nb" style="font-size:2.0vw">rot·9</div>
@@ -1048,12 +1042,12 @@
 </section>
 
 <!-- 16 · DOF -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Act II · Degrees of Freedom</div>
     <div>17 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>只监督看得见的量</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>自由度约定</h2>
     <div class="grid-4" style="margin-top:5vh">
@@ -1109,12 +1103,12 @@
 </section>
 
 <!-- 18 · Three sources overview -->
-<section class="slide dark">
+<section class="slide dense dark">
   <div class="chrome">
     <div>Data · Three Paths</div>
     <div>19 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>样本怎么来</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>三路标签</h2>
     <div class="grid-3" style="margin-top:5vh">
@@ -1145,12 +1139,12 @@
 </section>
 
 <!-- 19 · Path A -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Path A · data_factory</div>
     <div>20 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>合成真值 · 可控分布</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>CAD 仿真</h2>
     <p class="lead" style="max-width:62vw; margin-bottom:3vh" data-anim>
@@ -1186,12 +1180,12 @@
 </section>
 
 <!-- 20 · Path B -->
-<section class="slide dark">
+<section class="slide dense dark">
   <div class="chrome">
     <div>Path B · smt_pose_sim</div>
     <div>21 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>教师推理 · 仿真位姿工程</div>
     <h2 class="h-xl" style="white-space:nowrap; font-size:min(5.2vw,9vh)" data-anim>smt_pose_sim</h2>
     <p class="lead" style="max-width:68vw; margin-bottom:3.5vh" data-anim>
@@ -1226,12 +1220,12 @@
 </section>
 
 <!-- 21 · Path C -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Path C · Gen6D</div>
     <div>22 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>教师推理 · 抓取位姿</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>Gen6D</h2>
     <p class="lead" style="max-width:68vw; margin-bottom:3.5vh" data-anim>
@@ -1266,12 +1260,12 @@
 </section>
 
 <!-- 22 · Merge rules -->
-<section class="slide dark" data-animate="directional">
+<section class="slide dense dark" data-animate="directional">
   <div class="chrome">
     <div>Data · Merge Rules</div>
     <div>23 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>汇流前先对齐</div>
     <h2 class="h-xl" style="margin-bottom:3.5vh; white-space:nowrap" data-anim>标签约定</h2>
     <div class="grid-2-6-6" style="gap:4vw 3vh">
@@ -1302,7 +1296,7 @@
 </section>
 
 <!-- 23 · Train order -->
-<section class="slide light" data-animate="pipeline">
+<section class="slide dense light" data-animate="pipeline">
   <div class="chrome">
     <div>Train · Order</div>
     <div>24 / 28</div>
@@ -1340,7 +1334,7 @@
         </div>
       </div>
     </div>
-    <div class="callout" style="margin-top:3vh; max-width:74vw" data-anim>
+    <div class="callout" style="margin-top:1.6vh; max-width:74vw" data-anim>
       下一页展开：服务器规格、Adam 优化器、默认样本量。不加载官方预训练（--use_pretrain 默认 False）。
     </div>
   </div>
@@ -1351,15 +1345,15 @@
 </section>
 
 <!-- 24 · Train config -->
-<section class="slide dark">
+<section class="slide dense dark">
   <div class="chrome">
     <div>Train · Hardware &amp; Hyperparams</div>
     <div>25 / 28</div>
   </div>
-  <div class="frame" style="padding-top:4vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>训练配置 · 对着仓库默认值</div>
     <h2 class="h-xl" style="white-space:nowrap; font-size:min(5vw,8.5vh)" data-anim>机·器·样</h2>
-    <div class="grid-3" style="margin-top:3.5vh">
+    <div class="grid-3" style="margin-top:2vh">
       <div class="stat-card" data-anim>
         <div class="stat-label">Server · GPU</div>
         <div class="stat-nb" style="font-size:2.2vw">4090</div>
@@ -1376,7 +1370,7 @@
         <div class="stat-note">train 600 + test 200（data_factory 默认）</div>
       </div>
     </div>
-    <div class="grid-2-6-6" style="gap:3vw 2.5vh; margin-top:3.5vh">
+    <div class="grid-2-6-6" style="gap:3vw 2.5vh; margin-top:2vh">
       <div data-anim style="padding:2vh 1.8vw; border-left:3px solid currentColor">
         <div class="kicker">脚本默认 · train_*.sh</div>
         <ul style="margin-top:1.5vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.2vh; font-family:var(--sans-zh); font-size:max(14px,1.0vw); line-height:1.45">
@@ -1406,12 +1400,12 @@
 </section>
 
 <!-- 25 · Metrics -->
-<section class="slide light">
+<section class="slide dense light">
   <div class="chrome">
     <div>Eval · Metrics</div>
     <div>26 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>不要盯圆盘自转角</div>
     <h2 class="h-xl" style="white-space:nowrap" data-anim>验收指标</h2>
     <div class="grid-4" style="margin-top:5vh">
@@ -1447,12 +1441,12 @@
 </section>
 
 <!-- 26 · Failures -->
-<section class="slide dark" data-animate="directional">
+<section class="slide dense dark" data-animate="directional">
   <div class="chrome">
     <div>Debug · Failures</div>
     <div>27 / 28</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
+  <div class="frame" style="padding-top:1.5vh">
     <div class="kicker" data-anim>现象 → 对策</div>
     <h2 class="h-xl" style="margin-bottom:3.5vh; white-space:nowrap" data-anim>常见失败</h2>
     <div class="grid-2-6-6" style="gap:4vw 3vh">

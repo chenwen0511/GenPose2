@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<defs>
+<marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+<path d="M0,0 L6,3 L0,6 Z" fill="#0a1f3d"/></marker>
+</defs>
+<rect width="1280" height="720" fill="#f1f3f5"/>
+<text x="640" y="36" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="15" font-weight="500">Target Architecture · Vision Primary + Depth Auxiliary</text>
+<rect x="40" y="60" width="580" height="280" rx="4" fill="#fff" stroke="#5a6f8a" stroke-width="1.2"/>
+<text x="330" y="90" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="14" font-weight="700">BEFORE · 点云为主</text>
+<rect x="70" y="115" width="160" height="55" rx="4" fill="#e4e8ec" stroke="#0a1f3d" stroke-width="1.4"/>
+<text x="150" y="140" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="600">ROI RGB</text>
+<text x="150" y="158" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="10" font-weight="500">DINO 贴到点上</text>
+<rect x="70" y="185" width="160" height="55" rx="4" fill="#e4e8ec" stroke="#0a1f3d" stroke-width="1.4"/>
+<text x="150" y="210" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="600">稀疏点云</text>
+<text x="150" y="228" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="10" font-weight="500">主导几何</text>
+<line x1="230" y1="210" x2="280" y2="210" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<rect x="280" y="160" width="160" height="80" rx="4" fill="#fff" stroke="#0a1f3d" stroke-width="1.5"/>
+<text x="360" y="195" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="13" font-weight="700">PointNet++</text>
+<text x="360" y="218" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="11" font-weight="500">→ pts_feat</text>
+<line x1="440" y1="200" x2="490" y2="200" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<rect x="490" y="155" width="100" height="90" rx="4" fill="#2a5a9e" stroke="#2a5a9e" stroke-width="0"/>
+<text x="540" y="195" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="700">Score</text>
+<text x="540" y="215" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="700">Energy</text>
+<text x="330" y="300" text-anchor="middle" fill="#a04040" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="600">深度差 → 条件坏 → 位姿漂</text>
+<rect x="660" y="60" width="580" height="280" rx="4" fill="#fff" stroke="#2a5a9e" stroke-width="1.8"/>
+<text x="950" y="90" text-anchor="middle" fill="#2a5a9e" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="14" font-weight="700">AFTER · 视觉为主 · 深度为辅</text>
+<rect x="690" y="115" width="150" height="70" rx="4" fill="#d6eaf8" stroke="#5dade2" stroke-width="1.4"/>
+<text x="765" y="142" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="700">V 分支</text>
+<text x="765" y="162" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="10" font-weight="500">DINO → 主条件</text>
+<rect x="690" y="200" width="150" height="70" rx="4" fill="#e4e8ec" stroke="#5a6f8a" stroke-width="1.2"/>
+<text x="765" y="227" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="600">D 分支</text>
+<text x="765" y="247" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="10" font-weight="500">稀疏深度 · 辅</text>
+<rect x="860" y="155" width="120" height="70" rx="4" fill="#fff" stroke="#0a1f3d" stroke-width="1.5"/>
+<text x="920" y="185" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="13" font-weight="700">Gate α</text>
+<text x="920" y="205" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="10" font-weight="500">depth_conf</text>
+<line x1="840" y1="150" x2="860" y2="175" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<line x1="840" y1="235" x2="860" y2="205" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<line x1="980" y1="190" x2="1030" y2="190" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<rect x="1030" y="145" width="180" height="90" rx="4" fill="#2a5a9e" stroke="#2a5a9e" stroke-width="0"/>
+<text x="1120" y="180" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="13" font-weight="700">Score / Energy</text>
+<text x="1120" y="205" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="11" font-weight="500">αV+(1-α)D</text>
+<text x="950" y="300" text-anchor="middle" fill="#2a5a9e" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="600">RGB 定假设 · 深度校正距离</text>
+<rect x="40" y="370" width="1200" height="310" rx="4" fill="#fff" stroke="#5a6f8a" stroke-width="1.0"/>
+<text x="640" y="405" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="14" font-weight="700">落地四阶段</text>
+<rect x="70" y="440" width="240" height="160" rx="4" fill="#e4e8ec" stroke="#5a6f8a" stroke-width="1.2"/>
+<text x="190" y="490" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="16" font-weight="700">① 诊断</text>
+<text x="190" y="525" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">有效点数 vs 误差</text>
+<text x="190" y="555" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">T_z / R 谁先崩</text>
+<line x1="315" y1="520" x2="355" y2="520" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<rect x="360" y="440" width="240" height="160" rx="4" fill="#e4e8ec" stroke="#5a6f8a" stroke-width="1.2"/>
+<text x="480" y="490" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="16" font-weight="700">② 最小改动</text>
+<text x="480" y="525" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">过滤 + depth_conf</text>
+<text x="480" y="555" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">平移残差化</text>
+<line x1="605" y1="520" x2="645" y2="520" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<rect x="650" y="440" width="240" height="160" rx="4" fill="#2a5a9e" stroke="#2a5a9e" stroke-width="0"/>
+<text x="770" y="490" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="16" font-weight="700">③ 结构改动</text>
+<text x="770" y="525" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">双分支融合</text>
+<text x="770" y="555" text-anchor="middle" fill="#f1f3f5" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">RGB 直进 Score</text>
+<line x1="895" y1="520" x2="935" y2="520" stroke="#0a1f3d" stroke-width="1.6" marker-end="url(#arr)"/>
+<rect x="940" y="440" width="240" height="160" rx="4" fill="#e4e8ec" stroke="#5a6f8a" stroke-width="1.2"/>
+<text x="1060" y="490" text-anchor="middle" fill="#0a1f3d" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="16" font-weight="700">④ 可选增强</text>
+<text x="1060" y="525" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">DINO LoRA</text>
+<text x="1060" y="555" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">2D cross-attn</text>
+<text x="640" y="650" text-anchor="middle" fill="#5a6f8a" font-family="IBM Plex Mono, Noto Sans SC, sans-serif" font-size="12" font-weight="500">保留 Score / Energy 扩散头 · 改的是条件编码器的权力分配</text>
+</svg>
