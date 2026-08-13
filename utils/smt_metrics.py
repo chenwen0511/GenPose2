@@ -38,6 +38,49 @@ def adds_errors_m(pred_rotation, pred_translation, gt_rotation, gt_translation, 
     return np.asarray(errors, dtype=np.float64)
 
 
+def continuous_symmetry_adds_errors_m(
+    pred_rotation,
+    pred_translation,
+    gt_rotation,
+    gt_translation,
+    vertices,
+    symmetry_axes,
+):
+    """Minimize ADD analytically over a continuous local-axis symmetry group.
+
+    This avoids a discretization penalty when a physically circular object is
+    represented by a sparse polygonal OBJ. It is the known-symmetry form of
+    ADD-S: ``min_{S in symmetry group} ADD(T_pred S, T_gt)``.
+    """
+    errors = []
+    for pred_r, pred_t, gt_r, gt_t, axis in zip(
+        pred_rotation,
+        pred_translation,
+        gt_rotation,
+        gt_translation,
+        symmetry_axes,
+    ):
+        axis = int(axis)
+        plane = [index for index in range(3) if index != axis]
+        first, second = plane
+        relative = pred_r.T @ gt_r
+        angle = np.arctan2(
+            relative[second, first] - relative[first, second],
+            relative[first, first] + relative[second, second],
+        )
+        cosine, sine = np.cos(angle), np.sin(angle)
+        group = np.eye(3)
+        group[first, first] = cosine
+        group[first, second] = -sine
+        group[second, first] = sine
+        group[second, second] = cosine
+        aligned_pred = pred_r @ group
+        pred_points = _transform_points(vertices, aligned_pred, pred_t)
+        gt_points = _transform_points(vertices, gt_r, gt_t)
+        errors.append(float(np.linalg.norm(pred_points - gt_points, axis=1).mean()))
+    return np.asarray(errors, dtype=np.float64)
+
+
 def _summary(values):
     return {
         'mean': float(np.mean(values)),
@@ -74,12 +117,20 @@ def get_smt_pose_metrics(
         raise ValueError('SMT metrics require one continuous symmetry axis per sample')
 
     vertices = load_obj_vertices(model_path)
-    adds = adds_errors_m(
+    sym_info_numpy = sym_info.detach().cpu().numpy()
+    symmetry_axes = []
+    for row in sym_info_numpy:
+        axes = np.flatnonzero(row[1:4] == 1)
+        if len(axes) != 1:
+            raise ValueError('SMT ADD-S requires exactly one continuous symmetry axis')
+        symmetry_axes.append(int(axes[0]))
+    adds = continuous_symmetry_adds_errors_m(
         pred_rotation_t.detach().cpu().numpy(),
         pred_translation,
         gt_rotation_t.detach().cpu().numpy(),
         gt_translation,
         vertices,
+        symmetry_axes,
     )
     translation_m = np.linalg.norm(pred_translation - gt_translation, axis=1)
     threshold_005d = 0.05 * object_diameter

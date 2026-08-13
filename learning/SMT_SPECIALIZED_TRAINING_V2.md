@@ -34,7 +34,7 @@ Primary SMT metrics:
 
 - Normal-direction error: degrees between predicted and GT tray normal; yaw around local Z is ignored.
 - Translation error: Euclidean distance in metres, also report the existing centimetre metric.
-- ADD-S: mean closest-point distance in metres using the canonical OBJ.
+- Symmetry-aware ADD-S: `min ADD(T_pred S, T_gt)` over the known continuous local-Z symmetry group, in metres. The analytic minimization avoids false yaw error from the sparse polygonal OBJ.
 - `ADD-S < 0.05D` and `ADD-S < 0.10D`, where `D=0.1778 m`.
 - `normal < 10 deg AND translation < 2 cm`.
 
