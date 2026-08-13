@@ -254,23 +254,41 @@ def load_frame(
     rgb = np.array(Image.open(str(prefix) + "_color.png").convert("RGB"))
     depth = load_depth(Path(str(prefix) + "_depth.exr"))
     mask = load_mask_ids(Path(str(prefix) + "_mask.exr"))
-    meta = json.loads(Path(str(prefix) + "_meta.json").read_text(encoding="utf-8"))
+    meta_path = Path(str(prefix) + "_meta.json")
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+
+    pred_vis_p = Path(str(prefix) + "_pred_vis.png")
+    pred_meta_p = Path(str(prefix) + "_pred_meta.json")
+    pred_glb_p = Path(str(prefix) + "_pred.glb")
+    use_pred = pred_meta_p.is_file() or pred_glb_p.is_file() or pred_vis_p.is_file()
 
     depth_vis = colorize_depth(depth)
-    mask_vis = overlay_mask(rgb, mask)
+    if pred_vis_p.is_file():
+        mask_vis = np.array(Image.open(pred_vis_p).convert("RGB"))
+    else:
+        mask_vis = overlay_mask(rgb, mask)
 
     glb_path: Optional[str] = None
     glb_note = ""
-    try:
-        glb_path = build_or_reuse_frame_glb(
-            prefix=prefix,
-            rgb=rgb,
-            depth_m=depth,
-            mask_ids=mask,
-            meta=meta,
-        )
-    except Exception as exc:  # noqa: BLE001
-        glb_note = f"\n[3D GLB 生成失败] {exc}\n{traceback.format_exc(limit=2)}"
+    meta_for_glb = meta
+    meta_show = meta
+    if pred_meta_p.is_file():
+        meta_for_glb = json.loads(pred_meta_p.read_text(encoding="utf-8"))
+        meta_show = meta_for_glb
+    if pred_glb_p.is_file() and pred_glb_p.stat().st_size > 1000:
+        glb_path = str(pred_glb_p)
+        glb_note = "\n[3D] 使用 tray_0810 预测 *_pred.glb"
+    else:
+        try:
+            glb_path = build_or_reuse_frame_glb(
+                prefix=prefix if not use_pred else Path(str(prefix) + "_pred"),
+                rgb=rgb,
+                depth_m=depth,
+                mask_ids=mask,
+                meta=meta_for_glb,
+            )
+        except Exception as exc:  # noqa: BLE001
+            glb_note = f"\n[3D GLB 生成失败] {exc}\n{traceback.format_exc(limit=2)}"
 
     fg = int((mask > 0).sum())
     d_fg = depth[mask > 0]
@@ -280,14 +298,15 @@ def load_frame(
         if d_fg.size
         else "depth_fg: empty"
     )
-    n_obj = len(meta.get("objects") or {})
+    n_obj = len(meta_show.get("objects") or {})
+    src = "pred(tray_0810)" if use_pred else "gt/pseudo meta"
     header = (
-        f"frame={fid}  scene={scene.name}\n"
+        f"frame={fid}  scene={scene.name}  source={src}\n"
         f"path={prefix}_*\n"
         f"mask_fg_pixels={fg}  objects={n_obj}  {d_stats}\n"
         f"glb={glb_path or '(failed)'}"
         f"{glb_note}\n\n"
-        f"{format_meta(meta)}"
+        f"{format_meta(meta_show)}"
     )
     status = f"{index + 1} / {len(keys)}   ({fid})"
     return rgb, depth_vis, mask_vis, glb_path, header, status, index
@@ -341,7 +360,7 @@ def build_ui(default_root: Path) -> gr.Blocks:
         with gr.Row():
             rgb_img = gr.Image(label="RGB (color.png)", type="numpy")
             depth_img = gr.Image(label="Depth (伪彩)", type="numpy")
-            mask_img = gr.Image(label="Mask 叠加", type="numpy")
+            mask_img = gr.Image(label="Mask 叠加 / 若有则显示 pred_vis", type="numpy")
 
         with gr.Row():
             glb_view = gr.Model3D(

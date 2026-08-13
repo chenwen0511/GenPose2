@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONF_JSON="${ROOT_DIR}/config/conf.json"
+CONF_JSON="${ROOT_DIR}/configs/conf.json"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-genpose2}"
 # 若已 export PYTHON 则尊重；否则在 activate 后使用当前 env 的 python
 HOST="${HOST:-0.0.0.0}"
@@ -34,7 +34,7 @@ usage() {
   CUDA_VISIBLE_DEVICES  默认 ${CUDA_VISIBLE_DEVICES}
 
 UI: http://<host>:${PORT}/
-配置: config/conf.json
+配置: configs/conf.json
 EOF
 }
 
@@ -120,7 +120,7 @@ print_config_dependencies() {
   fi
 
   echo ""
-  echo "== 配置依赖项（来自 config/conf.json）=="
+  echo "== 配置依赖项（来自 configs/conf.json）=="
   ROOT_DIR="${ROOT_DIR}" CONF_JSON="${CONF_JSON}" "${PYTHON}" - <<'PY'
 import json
 import os

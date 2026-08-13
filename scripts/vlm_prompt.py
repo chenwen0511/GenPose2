@@ -371,7 +371,7 @@ def chat_completions_vision(
         else:
             raise RuntimeError(
                 "MiniMax/Anthropic 需要 API Key：设置环境变量 ANTHROPIC_API_KEY "
-                "或写入 config/secrets.local.json → vlm.api_key"
+                "或写入 configs/secrets.local.json → vlm.api_key"
             )
         logger.info(
             "VLM anthropic vision: url=%s model=%s prompt[:80]=%r",

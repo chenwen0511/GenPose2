@@ -40,7 +40,7 @@ def build_app():
             "页签1：**SAM3 分割**；"
             "页签2：**SAM3 + GenPose2**；"
             "页签3：**缺货商品位姿估计**（手填/识别商品名 → SAM3 → GenPose2）。"
-            "外部依赖见 `config/conf.json`。"
+            "外部依赖见 `configs/conf.json`。"
         )
         with gr.Tabs():
             build_sam3_tab()

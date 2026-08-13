@@ -289,7 +289,7 @@ tail -f logs/http_server.log
 
 ### 6.3 Gradio UI（SAM3 分割 / SAM3+GenPose2 / 缺货）
 
-`start.sh` 会 **主动 `conda activate genpose2`**（可用 `CONDA_ENV_NAME` / `CONDA_SH` 覆盖），并按 `config/conf.json` 打印依赖项、探测本地端口，提醒先启动依赖服务。本脚本**只启 Gradio UI**，不代启 SAM3 / VLM。
+`start.sh` 会 **主动 `conda activate genpose2`**（可用 `CONDA_ENV_NAME` / `CONDA_SH` 覆盖），并按 `configs/conf.json` 打印依赖项、探测本地端口，提醒先启动依赖服务。本脚本**只启 Gradio UI**，不代启 SAM3 / VLM。
 
 启动前请确认：
 
@@ -308,7 +308,7 @@ bash start.sh stop
 # 日志: logs/ui.log
 ```
 
-页签：**SAM3 分割**；**SAM3 + GenPose2**（含抓取位姿 `xyzrxryrz` mm/° + 目标正方体 / `grasp_pose.json`）；**缺货商品位姿估计**（M3 识别缺货 → qwen 生成 SAM3 提示词 → SAM3 → GenPose2（含 grasp/`poses` 输出）→ M3+空间先验估计目的位姿）。`conf.json` → `vlm.sam3_prompt` / `vlm.reason` / `vlm.missing_prompt`；MiniMax Key 放 `ANTHROPIC_API_KEY` 或 `config/secrets.local.json`（勿提交仓库）。默认开启 Depth→RGB 对齐。启动时在主线程预加载三网权重。
+页签：**SAM3 分割**；**SAM3 + GenPose2**（含抓取位姿 `xyzrxryrz` mm/° + 目标正方体 / `grasp_pose.json`）；**缺货商品位姿估计**（M3 识别缺货 → qwen 生成 SAM3 提示词 → SAM3 → GenPose2（含 grasp/`poses` 输出）→ M3+空间先验估计目的位姿）。`conf.json` → `vlm.sam3_prompt` / `vlm.reason` / `vlm.missing_prompt`；MiniMax Key 放 `ANTHROPIC_API_KEY` 或 `configs/secrets.local.json`（勿提交仓库）。默认开启 Depth→RGB 对齐。启动时在主线程预加载三网权重。
 ### 6.4 systemd（生产环境，可选）
 
 创建 `/etc/systemd/system/genpose2.service`（按实际用户与路径修改）：
@@ -446,7 +446,10 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 | 文档 | 内容 |
 |------|------|
 | `README.md` | 项目总览、Gradio UI、训练环境说明 |
-| `config/conf.json` | UI / SAM3 API / 双 VLM profile（`sam3_prompt`+`reason`）/ GenPose2 权重默认配置 |
+| `configs/conf.json` | UI / SAM3 API / 双 VLM profile（`sam3_prompt`+`reason`）/ GenPose2 权重默认配置 |
+| `learning/数据合成.md` | 合成代码迁至 `../data_factory_blender`；本仓库 `datasets/` 为输出目录 |
 | `learning/推理过程详解.md` | 离线推理与 HTTP 说明 |
 | `learning/料盘边缘场景训练.md` | 密排料盘 / 边缘点云从零重训练 |
 | `learning/案例分析1.md` | 深度丢失案例与 mask/深度质量 |
+| `scripts/train/*_tray_0810.sh` | 料盘 Blender 合成集冷启动训练 |
+| `scripts/synth/*.sh` | 转发到 `data_factory_blender` 的合成入口 |

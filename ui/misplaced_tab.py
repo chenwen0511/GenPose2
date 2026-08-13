@@ -628,7 +628,7 @@ def build_misplaced_tab() -> None:
 
                 gr.Markdown(
                     "#### ② 缺货 / 放置 VLM（MiniMax-M3）\n"
-                    "API Key：`ANTHROPIC_API_KEY` 或 `config/secrets.local.json`"
+                    "API Key：`ANTHROPIC_API_KEY` 或 `configs/secrets.local.json`"
                 )
                 reason_vlm_api = gr.Textbox(
                     label="Reason VLM API（Anthropic / MiniMax）",

@@ -15,12 +15,21 @@ output/ui_runs/*
 logs/
 .pids/
 config/secrets.local.json
+configs/secrets.local.json
 .env
 .env.*
 .codex/
 
 datasets/eval_set_real_data_with_shelf_0810
 datasets/train_set_1st_0810
+datasets/train_set_1st_0810-eval
 datasets/ui_display/_glb_cache/
+datasets/train_set_blender_v2/
+datasets/train_set_blender_v2_fix/
 *.pth
 *.log
+tools/blender/
+tools/blender-*/
+tools/blender.tar.xz
+
+# 数据合成代码已迁至 ../data_factory_blender

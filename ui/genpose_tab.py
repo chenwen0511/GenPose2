@@ -723,7 +723,7 @@ def build_sam3_genpose_tab() -> None:
             """
             **说明**
             - **提示词**：可手写；或填「商品中文名」后点「生成提示词」/勾选「运行前由大模型生成」
-            - **VLM**：界面可改 API URL / 模型名；`POST /v1/chat/completions`（传 RGB + 指令），默认见 `config/conf.json` → `vlm`
+            - **VLM**：界面可改 API URL / 模型名；`POST /v1/chat/completions`（传 RGB + 指令），默认见 `configs/conf.json` → `vlm`
             - **SAM3**：外部 HTTP `POST /infer`（`image_base64`），生成实例 mask
             - **Depth→RGB 对齐**：默认开启。将 Depth warp 到 RGB 网格后再做 GenPose2 / 2D 叠加，消除横向偏差；`dx=-45` 表示历史 RGB 上色偏移，对齐时 Depth 使用 `+45`
             - **camera.json**：可用 `depth_to_rgb_shift:[dx,dy]`（Depth 平移），或沿用 `rgb_shift:[dx,dy]`（按上色约定取反）

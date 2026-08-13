@@ -384,6 +384,6 @@ def build_sam3_tab() -> None:
             - 实例分割：SAM3 `POST /infer`（`image_base64`），默认 API `{cfg.get('api_url') or DEFAULT_SAM3_API_URL}`
             - 点云：先 **全局** 深度/SOR 剔除，再按 **实例** 做 MAD+SOR，最后导出 GLB
             - **Depth→RGB 对齐**默认开启；`dx=-45` 时 Depth 右移 45 对齐到 RGB（也可用 `camera.json` 的 `depth_to_rgb_shift` / `rgb_shift`）
-            - 配置见 `config/conf.json`
+            - 配置见 `configs/conf.json`
             """
         )

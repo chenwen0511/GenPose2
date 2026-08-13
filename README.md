@@ -220,13 +220,23 @@ bash start.sh start|stop|restart|status
 # 日志: logs/ui.log
 ```
 
-配置：`config/conf.json`（`sam3` API、双 VLM profile、`genpose2` 三网权重）。产物：`output/ui_runs/`（含 `grasp_pose.json`、`place_destination.json`）。
+配置：`configs/conf.json`（`sam3` API、双 VLM profile、`genpose2` 三网权重）。产物：`output/ui_runs/`（含 `grasp_pose.json`、`place_destination.json`）。
+
+**料盘冷启动训练**（Blender 合成数据默认 `datasets/train_set_blender_v2/SOPE`）：
+
+```bash
+bash scripts/train/train_score_tray_0810.sh
+bash scripts/train/train_energy_tray_0810.sh
+bash scripts/train/train_scale_tray_0810.sh   # 可选
+```
+
+**数据合成**已迁至并列工程 [`../data_factory_blender`](../data_factory_blender)（本仓库仅保留 `datasets/` 作为输出目录）。说明见 [`learning/数据合成.md`](learning/数据合成.md)；快捷转发：`scripts/synth/*.sh`。
 
 **抓取位姿展示**（SAM3 + GenPose2 / 缺货商品位姿估计页签）：对齐 Gen6D 摘取点格式，JSON 框输出 `xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），并含目标空间正方体 `size_3d` / `size_3d_mm` / 8 角点 `corners_mm`；同内容写入运行目录 `grasp_pose.json`。缺货页签的 Gradio 输出与 `run_sam3_genpose_tab` 的 10 项对齐（含 grasp），再接放置目的可视化。
 
 **提示词 / VLM**（`scripts/vlm_prompt.py`）：
 - `vlm.sam3_prompt`：本地 **qwen3-vl-4b**（OpenAI `chat/completions`）生成 SAM3 提示词
-- `vlm.reason`：**MiniMax-M3**（Anthropic 兼容）做缺货识别与放置位移；Key 用 `ANTHROPIC_API_KEY` 或 `config/secrets.local.json`（已 gitignore）
+- `vlm.reason`：**MiniMax-M3**（Anthropic 兼容）做缺货识别与放置位移；Key 用 `ANTHROPIC_API_KEY` 或 `configs/secrets.local.json`（已 gitignore）
 - 缺货识别默认文案：`vlm.missing_prompt`
 
 **放置目的位姿**：把同款实例 mask + `xyz_mm` 与识别对话喂给 M3；并用列/前排深度空间先验校正「飞出货架」的位移。实现见 `ui/place_missing.py`。

@@ -1,6 +1,6 @@
 {
   "sam3": {
-    "api_url": "http://127.0.0.1:18002/infer",
+    "api_url": "http://127.0.0.1:18003/infer",
     "timeout_s": 300.0,
     "threshold": 0.41,
     "mask_threshold": 0.50,
@@ -26,8 +26,8 @@
     }
   },
   "genpose2": {
-    "score_ckpt": "results/ckpts/ScoreNet/scorenet.pth",
-    "energy_ckpt": "results/ckpts/EnergyNet/energynet.pth",
-    "scale_ckpt": "results/ckpts/ScaleNet/scalenet.pth"
+    "score_ckpt": "results/ckpts/ScoreNet_tray_0810/ckpt_epoch50.pth",
+    "energy_ckpt": "results/ckpts/EnergyNet_tray_0810/ckpt_epoch50.pth",
+    "scale_ckpt": "results/ckpts/ScaleNet_tray_0810/ckpt_epoch4.pth"
   }
 }

@@ -15,7 +15,7 @@ SAM3 text-prompt segmentation backend (REST HTTP).
 响应中的 ``detections`` 会落盘为 ``{output_dir}/sam6d_results/detection_ism.json``，
 本模块继续生成实例 mask 与可视化。
 
-默认配置见 ``config/conf.json``（sam3 / graspnet 外部依赖），模块内常量会在导入时从该文件加载：
+默认配置见 ``configs/conf.json``（sam3 / graspnet 外部依赖），模块内常量会在导入时从该文件加载：
 
     DEFAULT_SAM3_API_URL
     DEFAULT_SAM3_PROMPT

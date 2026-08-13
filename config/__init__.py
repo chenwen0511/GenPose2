@@ -1,4 +1,4 @@
-"""Load project external dependency config from ``config/conf.json``."""
+"""Load project external dependency config from ``configs/conf.json``."""
 
 from __future__ import annotations
 
@@ -8,10 +8,13 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict
 
-CONFIG_DIR = Path(__file__).resolve().parent
-CONF_PATH = CONFIG_DIR / "conf.json"
-SECRETS_PATH = CONFIG_DIR / "secrets.local.json"
-ROOT_DIR = CONFIG_DIR.parent
+# Python 包仍在 config/；JSON 配置在 configs/
+ROOT_DIR = Path(__file__).resolve().parents[1]
+CONFIGS_DIR = ROOT_DIR / "configs"
+CONF_PATH = CONFIGS_DIR / "conf.json"
+SECRETS_PATH = CONFIGS_DIR / "secrets.local.json"
+# 兼容旧路径 config/secrets.local.json
+_LEGACY_SECRETS = Path(__file__).resolve().parent / "secrets.local.json"
 
 
 def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -32,9 +35,10 @@ def load_conf(path: str | None = None) -> Dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"config must be a JSON object: {conf_path}")
     # Optional local secrets (API keys); not committed
-    if SECRETS_PATH.is_file() and path is None:
+    secrets_path = SECRETS_PATH if SECRETS_PATH.is_file() else _LEGACY_SECRETS
+    if secrets_path.is_file() and path is None:
         try:
-            secrets = json.loads(SECRETS_PATH.read_text(encoding="utf-8"))
+            secrets = json.loads(secrets_path.read_text(encoding="utf-8"))
             if isinstance(secrets, dict):
                 data = _deep_merge(data, secrets)
         except Exception:  # noqa: BLE001
