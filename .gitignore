@@ -33,3 +33,5 @@ tools/blender-*/
 tools/blender.tar.xz
 
 # 数据合成代码已迁至 ../data_factory_blender
+
+configs/conf.json

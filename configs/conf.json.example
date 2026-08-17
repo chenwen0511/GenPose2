@@ -28,6 +28,8 @@
   "genpose2": {
     "score_ckpt": "results/ckpts/ScoreNet_tray_0810/ckpt_epoch50.pth",
     "energy_ckpt": "results/ckpts/EnergyNet_tray_0810/ckpt_epoch50.pth",
-    "scale_ckpt": "results/ckpts/ScaleNet_tray_0810/ckpt_epoch4.pth"
+    "scale_ckpt": "results/ckpts/ScaleNet_tray_0810/ckpt_epoch4.pth",
+    "scale_mode": "metadata",
+    "object_id": "smt_factory-smt_tray-000001"
   }
 }

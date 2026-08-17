@@ -490,7 +490,7 @@ def build_sam3_genpose_tab() -> None:
     with gr.Tab("SAM3 + GenPose2"):
         gr.Markdown(
             "流水线：**SAM3 文本分割 → GenPose2 6D 位姿估计**。"
-            "输出位姿叠加图、抓取位姿（`xyzrxryrz` mm/° + 目标正方体）、`poses.json`、点云 GLB（RGB 坐标轴）。"
+            "输出位姿叠加图、抓取位姿（`xyzrxryrz` mm/° + 目标正方体）、`poses.json`、点云 GLB（RGB 坐标轴 + 3D bbox）。"
             "实例分割提示词可由多模态大模型根据 RGB + 商品中文名自动生成。"
         )
         with gr.Row():
@@ -644,9 +644,10 @@ def build_sam3_genpose_tab() -> None:
                     height=280,
                 )
 
-        gr.Markdown("### 点云 + 位姿坐标轴")
+        gr.Markdown("### 点云 + 位姿坐标轴 + 3D bbox")
         gr.Markdown(
-            "> **全幅 RGB 彩色点云** + **每实例 RGB 坐标轴**（X红/Y绿/Z蓝）。"
+            "> **全幅 RGB 彩色点云** + **每实例 RGB 坐标轴**（X红/Y绿/Z蓝）"
+            " + **青色 3D 尺寸框**（`size_3d` 定向包围盒）。"
             "数值坐标系 `frame=camera`；3D 预览翻 Y 与 RGB 同向。"
             "左侧 **抓取位姿** 框：`xyzrxryrz` 为 mm/°（对齐 Gen6D 摘取点格式），"
             "并含目标空间正方体 `size_3d` / `corners_mm`。"

@@ -149,6 +149,71 @@ def create_pose_marker_sphere(
     return sphere
 
 
+def create_oriented_bbox_mesh(
+    origin: np.ndarray,
+    rotation_glb: np.ndarray,
+    size_3d_m: Sequence[float],
+    *,
+    radius_m: float = 0.0016,
+    color_rgba: Sequence[int] = (0, 220, 255, 255),
+) -> trimesh.Trimesh | None:
+    """
+    Oriented 3D bounding-box wireframe (12 cylinder edges) in GLB preview frame.
+
+    ``size_3d_m`` is full edge lengths [sx, sy, sz] in meters along object axes.
+    Corners are ±half-extents in local frame, then ``R @ local + origin``.
+    """
+    origin = np.asarray(origin, dtype=np.float64).reshape(3)
+    rotation_glb = np.asarray(rotation_glb, dtype=np.float64).reshape(3, 3)
+    size = np.asarray(size_3d_m, dtype=np.float64).reshape(3)
+    if not np.all(np.isfinite(size)) or not np.all(size > 1e-6):
+        return None
+
+    hx, hy, hz = 0.5 * size
+    local = np.array(
+        [
+            [-hx, -hy, -hz],
+            [hx, -hy, -hz],
+            [hx, hy, -hz],
+            [-hx, hy, -hz],
+            [-hx, -hy, hz],
+            [hx, -hy, hz],
+            [hx, hy, hz],
+            [-hx, hy, hz],
+        ],
+        dtype=np.float64,
+    )
+    corners = (rotation_glb @ local.T).T + origin.reshape(1, 3)
+    edges = (
+        (0, 1),
+        (1, 2),
+        (2, 3),
+        (3, 0),
+        (4, 5),
+        (5, 6),
+        (6, 7),
+        (7, 4),
+        (0, 4),
+        (1, 5),
+        (2, 6),
+        (3, 7),
+    )
+    parts: list = []
+    for i0, i1 in edges:
+        edge = _cylinder_between(
+            corners[i0],
+            corners[i1],
+            radius_m=float(radius_m),
+            color_rgba=color_rgba,
+            sections=8,
+        )
+        if edge is not None:
+            parts.append(edge)
+    if not parts:
+        return None
+    return trimesh.util.concatenate(parts)
+
+
 def _cylinder_between(
     p0: np.ndarray,
     p1: np.ndarray,

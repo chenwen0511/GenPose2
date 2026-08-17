@@ -25,6 +25,7 @@ from config import get_genpose2_conf, resolve_repo_path  # noqa: E402
 from ui.pointcloud import (  # noqa: E402
     GRASP_CLOUD_MAX_POINTS,
     camera_pose_m_to_glb,
+    create_oriented_bbox_mesh,
     create_pose_axes_mesh,
     create_pose_marker_sphere,
     depth_rgb_to_pointcloud,
@@ -34,6 +35,33 @@ from ui.pointcloud import (  # noqa: E402
 logger = logging.getLogger("genpose_runner")
 
 _genpose_holder: Dict[str, Any] = {"model": None, "ckpts": None}
+
+
+def resolve_metadata_dimensions_m(cfg: Optional[Dict[str, Any]] = None) -> Optional[np.ndarray]:
+    """Return configured object dimensions when ScaleNet output is disabled."""
+    genpose_cfg = get_genpose2_conf() if cfg is None else cfg
+    scale_mode = str(genpose_cfg.get("scale_mode", "network")).strip().lower()
+    if scale_mode == "network":
+        return None
+    if scale_mode != "metadata":
+        raise ValueError(f"unsupported GenPose2 scale_mode: {scale_mode}")
+
+    object_id = str(genpose_cfg.get("object_id", "")).strip()
+    if not object_id:
+        raise ValueError("genpose2.object_id is required when scale_mode=metadata")
+
+    obj_meta_path = ROOT_DIR / "configs" / "obj_meta.json"
+    with obj_meta_path.open("r", encoding="utf-8") as handle:
+        obj_meta = json.load(handle)
+    try:
+        dimensions = obj_meta["instance_dict"][object_id]["dimensions"]
+    except KeyError as exc:
+        raise ValueError(f"object dimensions not found for object_id={object_id}") from exc
+
+    dimensions_m = np.asarray(dimensions, dtype=np.float32)
+    if dimensions_m.shape != (3,) or not np.all(np.isfinite(dimensions_m)) or np.any(dimensions_m <= 0):
+        raise ValueError(f"invalid dimensions for object_id={object_id}: {dimensions}")
+    return dimensions_m
 
 
 def _rotation_matrix_to_euler_zyx(rotation: List[List[float]]) -> List[float]:
@@ -421,6 +449,16 @@ def export_pose_scene(
                 color_rgba=core_colors[i % len(core_colors)],
             )
         )
+        if size is not None and np.all(np.asarray(size, dtype=np.float64) > 1e-6):
+            bbox = create_oriented_bbox_mesh(
+                t_glb,
+                r_glb,
+                size,
+                radius_m=0.0015,
+                color_rgba=(0, 220, 255, 230),
+            )
+            if bbox is not None:
+                geometries.append(bbox)
     files = export_scene_files(
         points,
         colors,
@@ -470,6 +508,15 @@ def run_genpose2_from_mask(
             n_pts=genpose.cfg.num_points,
         )
         pose, length = genpose.inference(data, prev_pose=None, tracking=False, tracking_T0=0.15)
+        metadata_dimensions_m = resolve_metadata_dimensions_m()
+        if metadata_dimensions_m is not None:
+            fixed_length = length[0].new_tensor(metadata_dimensions_m).reshape(1, 3)
+            length[0] = fixed_length.repeat(pose[0].shape[0], 1)
+            print(
+                "[genpose_runner] ScaleNet output ignored; "
+                f"using metadata dimensions={metadata_dimensions_m.tolist()}",
+                flush=True,
+            )
         vis_bgr = visualize_pose(data, pose, length, visualize_pts=False, visualize_image=False)
     finally:
         sys.argv = argv_saved

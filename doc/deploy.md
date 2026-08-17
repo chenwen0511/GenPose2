@@ -446,7 +446,8 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 | 文档 | 内容 |
 |------|------|
 | `README.md` | 项目总览、Gradio UI、训练环境说明 |
-| `configs/conf.json` | UI / SAM3 API / 双 VLM profile（`sam3_prompt`+`reason`）/ GenPose2 权重默认配置 |
+| `configs/conf.json.example` | UI / SAM3 / 双 VLM / GenPose2 权重模板（复制为本地 `configs/conf.json`） |
+| `configs/conf.json` | 本地运行配置（gitignore；含可选 `scale_mode` / `object_id`） |
 | `learning/数据合成.md` | 合成代码迁至 `../data_factory_blender`；本仓库 `datasets/` 为输出目录 |
 | `learning/推理过程详解.md` | 离线推理与 HTTP 说明 |
 | `learning/料盘边缘场景训练.md` | 密排料盘 / 边缘点云从零重训练 |
