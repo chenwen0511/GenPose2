@@ -102,18 +102,18 @@ def estimate_depth_to_rgb_shift(
     rgb: np.ndarray,
     depth_mm: np.ndarray,
     *,
-    search_x: int = 32,
-    search_y: int = 24,
-    step: int = 2,
-    min_improve_ratio: float = 1.25,
-    max_shift_px: int = 40,
+    search_x: int = 80,
+    search_y: int = 48,
+    step: int = 4,
+    min_improve_ratio: float = 1.08,
+    max_shift_px: int = 96,
 ) -> Tuple[int, int, Dict[str, Any]]:
     """
     Estimate 2D pixel shift that warps depth into RGB (edge correlation).
 
-    Conservative by default: PEM/Gen6D assume already-aligned RGB-D and color
-    with the same ``(u,v)``. Large spurious shifts (e.g. dx≈90) make colors
-    slide off geometry, so we reject weak / oversized matches.
+    Coarse-to-fine search covers typical RGB–Depth misregistration (tens of
+    pixels, e.g. historical dx≈45). Weak / oversized peaks are still rejected
+    so PEM/Gen6D do not get a spurious warp.
 
     Returns ``(dx, dy, stats)`` where aligned_depth(u,v) ≈ depth(u-dx, v-dy)
     i.e. ``cv2.warpAffine(depth, [[1,0,dx],[0,1,dy]])``.
@@ -153,40 +153,82 @@ def estimate_depth_to_rgb_shift(
         }
 
     h, w = depth_edges.shape
-    baseline = int(((depth_edges > 0) & (rgb_edges > 0)).sum())
-    best_score = baseline
-    best_dx, best_dy = 0, 0
-    for dy in range(-int(search_y), int(search_y) + 1, int(step)):
-        for dx in range(-int(search_x), int(search_x) + 1, int(step)):
-            if dx == 0 and dy == 0:
-                score = baseline
-            else:
-                M = np.float32([[1.0, 0.0, float(dx)], [0.0, 1.0, float(dy)]])
-                shifted = cv2.warpAffine(
-                    depth_edges, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0
-                )
-                score = int(((shifted > 0) & (rgb_edges > 0)).sum())
-            if score > best_score:
-                best_score = score
-                best_dx, best_dy = int(dx), int(dy)
+    sx = max(1, int(search_x))
+    sy = max(1, int(search_y))
+    coarse_step = max(1, int(step))
+    rgb_dt = cv2.distanceTransform(
+        (rgb_edges == 0).astype(np.uint8), cv2.DIST_L2, 5
+    )
 
-    # Optional 1px refine around best
-    for dy in range(best_dy - 1, best_dy + 2):
-        for dx in range(best_dx - 1, best_dx + 2):
+    def _chamfer(dx: int, dy: int) -> Tuple[float, int]:
+        if dx == 0 and dy == 0:
+            shifted = depth_edges
+        else:
             M = np.float32([[1.0, 0.0, float(dx)], [0.0, 1.0, float(dy)]])
-            shifted = cv2.warpAffine(depth_edges, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0)
-            score = int(((shifted > 0) & (rgb_edges > 0)).sum())
-            if score > best_score:
-                best_score = score
+            shifted = cv2.warpAffine(
+                depth_edges, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0
+            )
+        ys, xs = np.where(shifted > 0)
+        n_edge = int(xs.size)
+        if n_edge < 20:
+            return 1e9, 0
+        mean_d = float(rgb_dt[ys, xs].mean())
+        overlap = int(((shifted > 0) & (rgb_edges > 0)).sum())
+        return mean_d, overlap
+
+    baseline_d, baseline_overlap = _chamfer(0, 0)
+    candidates = [(0, 0)]
+    shift, response = cv2.phaseCorrelate(
+        depth_edges.astype(np.float32), rgb_edges.astype(np.float32)
+    )
+    pc_dx, pc_dy = int(round(float(shift[0]))), int(round(float(shift[1])))
+    if abs(pc_dx) <= sx and abs(pc_dy) <= sy:
+        candidates.append((pc_dx, pc_dy))
+    # Strong phase peak: skip the dense grid (typical RGB-D offset is a global translation).
+    if float(response) < 0.25:
+        for dy in range(-sy, sy + 1, coarse_step):
+            for dx in range(-sx, sx + 1, coarse_step):
+                candidates.append((int(dx), int(dy)))
+
+    best_dx, best_dy = 0, 0
+    best_d, best_overlap = baseline_d, baseline_overlap
+    seen = set()
+    for dx, dy in candidates:
+        key = (int(dx), int(dy))
+        if key in seen:
+            continue
+        seen.add(key)
+        mean_d, overlap = _chamfer(dx, dy)
+        better = mean_d < best_d - 1e-6 or (
+            abs(mean_d - best_d) <= 1e-6 and overlap > best_overlap
+        )
+        if better:
+            best_d, best_overlap = mean_d, overlap
+            best_dx, best_dy = int(dx), int(dy)
+
+    refine = max(coarse_step, 2)
+    for dy in range(best_dy - refine, best_dy + refine + 1):
+        if abs(dy) > sy:
+            continue
+        for dx in range(best_dx - refine, best_dx + refine + 1):
+            if abs(dx) > sx:
+                continue
+            mean_d, overlap = _chamfer(dx, dy)
+            better = mean_d < best_d - 1e-6 or (
+                abs(mean_d - best_d) <= 1e-6 and overlap > best_overlap
+            )
+            if better:
+                best_d, best_overlap = mean_d, overlap
                 best_dx, best_dy = int(dx), int(dy)
 
-    improved = bool(best_score > baseline)
+    improved = bool(best_d < baseline_d - 1e-3)
     reject_reason = None
     apply_dx, apply_dy = best_dx, best_dy
     if not improved:
         apply_dx, apply_dy = 0, 0
         reject_reason = "no_improvement"
-    elif best_score < float(min_improve_ratio) * max(float(baseline), 1.0):
+    elif best_d > float(baseline_d) / max(float(min_improve_ratio), 1.01):
+        # chamfer is a distance: require it to drop by ~improve_ratio
         apply_dx, apply_dy = 0, 0
         reject_reason = "weak_improvement"
     elif max(abs(best_dx), abs(best_dy)) > int(max_shift_px):
@@ -195,13 +237,20 @@ def estimate_depth_to_rgb_shift(
 
     return apply_dx, apply_dy, {
         "enabled": True,
-        "method": "edge_correlation",
+        "method": "edge_chamfer",
         "dx": int(apply_dx),
         "dy": int(apply_dy),
         "raw_dx": int(best_dx),
         "raw_dy": int(best_dy),
-        "score": best_score,
-        "baseline": baseline,
+        "score": float(best_overlap),
+        "baseline": float(baseline_overlap),
+        "chamfer": float(best_d),
+        "chamfer_baseline": float(baseline_d),
+        "phase_correlate": {
+            "dx": int(pc_dx),
+            "dy": int(pc_dy),
+            "response": float(response),
+        },
         "improved": improved,
         "applied": bool(apply_dx != 0 or apply_dy != 0),
         "reject_reason": reject_reason,
@@ -291,16 +340,17 @@ def resolve_rgb_depth_alignment(
     ui_rgb_shift_x: float = 0.0,
     ui_rgb_shift_y: float = 0.0,
     enable_depth_align: bool = True,
-    auto_if_zero: bool = False,
+    auto_align: bool = True,
+    auto_if_zero: Optional[bool] = None,
 ) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
     """
     Prepare depth + cloud-color for RGB-D pipelines.
 
     When ``enable_depth_align`` is True (recommended):
       - Warp **depth → RGB** so SAM3 mask / GenPose2 / 2D overlay share ``(u,v)``.
-      - ``camera.json`` ``depth_to_rgb_shift`` / ``depth_shift`` used as-is for depth warp.
-      - Else ``rgb_shift`` / ``color_shift`` / UI dx,dy are treated as *RGB coloring*
-        convention (historical ``dx=-45``): depth warp uses ``(-dx, -dy)``.
+      - Priority: ``camera.json`` ``depth_to_rgb_shift`` → auto edge estimate
+        (if ``auto_align``) → UI/legacy ``rgb_shift`` (historical ``dx=-45``
+        means depth warp ``(+45, 0)``).
       - After geometric align, cloud color uses **unshifted** RGB.
 
     When False: keep legacy behavior (only shift RGB/id for GLB coloring).
@@ -335,6 +385,14 @@ def resolve_rgb_depth_alignment(
             color_for_cloud = shift_rgb_xy(color_for_cloud, sx, sy)
         return np.asarray(depth_mm), color_for_cloud, meta
 
+    if auto_if_zero is not None:
+        auto_align = bool(auto_if_zero)
+
+    manual_shift: Optional[Tuple[int, int]] = None
+    if sx != 0 or sy != 0:
+        # Historical UI: shift RGB by (sx,sy) for coloring ⇔ warp depth by (-sx,-sy)
+        manual_shift = (-sx, -sy)
+
     if isinstance(cam_depth_shift, (list, tuple)) and len(cam_depth_shift) == 2:
         d_shift: Optional[Tuple[int, int]] = (
             int(cam_depth_shift[0]),
@@ -342,15 +400,14 @@ def resolve_rgb_depth_alignment(
         )
         method = "camera.json:depth_to_rgb_shift"
         auto = False
-    elif sx != 0 or sy != 0:
-        # Historical UI: shift RGB by (sx,sy) for coloring ⇔ warp depth by (-sx,-sy)
-        d_shift = (-sx, -sy)
-        method = f"{rgb_src}->depth_inverse"
-        auto = False
-    elif auto_if_zero:
+    elif bool(auto_align):
         d_shift = None
         method = "auto_edge"
         auto = True
+    elif manual_shift is not None:
+        d_shift = manual_shift
+        method = f"{rgb_src}->depth_inverse"
+        auto = False
     else:
         d_shift = (0, 0)
         method = "none"
@@ -360,6 +417,17 @@ def resolve_rgb_depth_alignment(
         depth_mm, color_np, shift_xy=d_shift, auto=auto
     )
     align_stats = dict(align_stats)
+    if (
+        method == "auto_edge"
+        and not bool(align_stats.get("applied"))
+        and manual_shift is not None
+    ):
+        aligned, align_stats = align_depth_to_rgb(
+            depth_mm, color_np, shift_xy=manual_shift, auto=False
+        )
+        align_stats = dict(align_stats)
+        align_stats["fallback"] = "manual_after_auto_reject"
+        method = f"auto_reject->{rgb_src}->depth_inverse"
     align_stats["method_resolved"] = method
     meta = {
         "depth_align": align_stats,

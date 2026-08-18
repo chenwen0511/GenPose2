@@ -208,9 +208,9 @@ If you find our work useful in your research, please consider citing:
 
 | 页签 | 功能 |
 |------|------|
-| **SAM3 分割** | 文本提示分割 → mask / bbox / 实例点云 GLB |
-| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / 抓取位姿框（`xyzrxryrz` mm/° + 目标正方体）/ `poses.json` / `grasp_pose.json` / 点云 GLB（RGB 坐标轴 + 青色 3D bbox）；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
-| **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2（含 `grasp_pose.json` / `poses.json`）→ 空间先验+M3 选型/位移 → 目的 6D（品红 GLB） |
+| **SAM3 分割** | 文本提示分割 → mask / bbox / 灰色深度点云 GLB（不上 RGB 色） |
+| **SAM3 + GenPose2** | SAM3 → GenPose2 6D 位姿 → 叠加图 / 抓取位姿框（`xyzrxryrz` mm/° + 目标正方体）/ `poses.json` / `grasp_pose.json` / 灰色点云 GLB（坐标轴 + 青色 3D bbox）；支持 VLM 根据 RGB + 商品中文名生成实例分割提示词 |
+| **缺货商品位姿估计** | 缺货名（MiniMax-M3）→ SAM3 提示词（qwen3-vl）→ SAM3 → GenPose2（含 `grasp_pose.json` / `poses.json`）→ 空间先验+M3 选型/位移 → 目的 6D（灰色货架点云 + 品红实例 GLB） |
 
 ```bash
 # start.sh 会主动 conda activate genpose2，并打印 conf.json 依赖探测日志
@@ -236,7 +236,7 @@ bash scripts/train/train_blender_v3_0818.sh
 
 **数据合成**已迁至并列工程 [`../data_factory_blender`](../data_factory_blender)（本仓库仅保留 `datasets/` 作为输出目录）。说明见 [`learning/数据合成.md`](learning/数据合成.md)；快捷转发：`scripts/synth/*.sh`。
 
-**抓取位姿展示**（SAM3 + GenPose2 / 缺货商品位姿估计页签）：对齐 Gen6D 摘取点格式，JSON 框输出 `xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），并含目标空间正方体 `size_3d` / `size_3d_mm` / 8 角点 `corners_mm`；同内容写入运行目录 `grasp_pose.json`。3D 预览 GLB 叠加 **RGB 坐标轴 + 青色定向 3D bbox**。缺货页签的 Gradio 输出与 `run_sam3_genpose_tab` 的 10 项对齐（含 grasp），再接放置目的可视化。
+**抓取位姿展示**（SAM3 + GenPose2 / 缺货商品位姿估计页签）：对齐 Gen6D 摘取点格式，JSON 框输出 `xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），并含目标空间正方体 `size_3d` / `size_3d_mm` / 8 角点 `corners_mm`；同内容写入运行目录 `grasp_pose.json`。3D 预览为 **灰色深度点云** + **坐标轴 + 青色定向 3D bbox**（不上 RGB 色）。缺货页签的 Gradio 输出与 `run_sam3_genpose_tab` 的 10 项对齐（含 grasp），再接放置目的可视化。
 
 **提示词 / VLM**（`scripts/vlm_prompt.py`）：
 - `vlm.sam3_prompt`：本地 **qwen3-vl-4b**（OpenAI `chat/completions`）生成 SAM3 提示词
@@ -245,7 +245,7 @@ bash scripts/train/train_blender_v3_0818.sh
 
 **放置目的位姿**：把同款实例 mask + `xyz_mm` 与识别对话喂给 M3；并用列/前排深度空间先验校正「飞出货架」的位移。实现见 `ui/place_missing.py`。
 
-**Depth→RGB 对齐**：UI 默认开启，将 Depth warp 到 RGB 网格后再推理/叠加，修正 RGB-D 横向偏差（历史 `dx=-45` 约定会转为 Depth 右移 45）；也可用 `camera.json` 的 `depth_to_rgb_shift` / `rgb_shift`。
+**Depth→RGB 对齐**：给 SAM3 mask / GenPose2 用（不是给点云上色）。UI 默认开启，并用边缘相关 **自动估计** 像素偏移；估计失败才回退手动 `dx/dy`（历史约定 `-45` → Depth 右移 45）。`camera.json` 的 `depth_to_rgb_shift` 优先于自动估计。
 
 ## 📮 Contact
 

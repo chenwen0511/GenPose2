@@ -194,6 +194,7 @@ def run_sam3_genpose_tab(
     rgb_shift_x: float = -45.0,
     rgb_shift_y: float = 0.0,
     enable_depth_align: bool = True,
+    auto_align: bool = True,
     enable_workspace_outlier: bool = True,
     max_depth_mm: float = 2500,
     min_depth_mm: float = 50,
@@ -255,14 +256,14 @@ def run_sam3_genpose_tab(
             )
 
         color_np = np.asarray(rgb, dtype=np.uint8)
-        depth_mm, color_for_cloud, align_meta = resolve_rgb_depth_alignment(
+        depth_mm, _color_for_cloud, align_meta = resolve_rgb_depth_alignment(
             depth_mm,
             color_np,
             camera_meta,
             ui_rgb_shift_x=float(rgb_shift_x or 0),
             ui_rgb_shift_y=float(rgb_shift_y or 0),
             enable_depth_align=bool(enable_depth_align),
-            auto_if_zero=False,
+            auto_align=bool(auto_align),
         )
         rgb_shift_meta = dict(align_meta.get("rgb_shift") or {})
         depth_align_meta = dict(align_meta.get("depth_align") or {})
@@ -382,7 +383,6 @@ def run_sam3_genpose_tab(
         )
         files = export_pose_scene(
             depth_mm=depth_mm,
-            color_rgb=color_for_cloud,
             intrinsic=intrinsic,
             factor_depth=factor_depth,
             poses_np=poses_np,
@@ -508,17 +508,21 @@ def build_sam3_genpose_tab() -> None:
                         file_types=[".json"],
                     )
                 enable_depth_align = gr.Checkbox(
-                    label="对齐 Depth→RGB（推荐：修正像素/3D 偏差；开启后 dx/dy 用于几何对齐）",
+                    label="对齐 Depth→RGB（推荐：修正像素/3D 偏差；默认开启）",
+                    value=True,
+                )
+                auto_align = gr.Checkbox(
+                    label="自动估计 RGB↔Depth 偏移（边缘相关；默认开启，失败则回退手动 dx/dy）",
                     value=True,
                 )
                 with gr.Row():
                     rgb_shift_x = gr.Number(
-                        label="RGB↔Depth 偏移 dx（历史上色约定：+右；默认 -45→Depth 右移 45）",
+                        label="手动 dx（自动关闭或估计失败时生效；历史上色约定 -45→Depth 右移 45）",
                         value=-45,
                         precision=0,
                     )
                     rgb_shift_y = gr.Number(
-                        label="RGB↔Depth 偏移 dy（+下）",
+                        label="手动 dy（+下）",
                         value=0,
                         precision=0,
                     )
@@ -646,7 +650,7 @@ def build_sam3_genpose_tab() -> None:
 
         gr.Markdown("### 点云 + 位姿坐标轴 + 3D bbox")
         gr.Markdown(
-            "> **全幅 RGB 彩色点云** + **每实例 RGB 坐标轴**（X红/Y绿/Z蓝）"
+            "> **灰色深度点云** + **每实例坐标轴**（X红/Y绿/Z蓝）"
             " + **青色 3D 尺寸框**（`size_3d` 定向包围盒）。"
             "数值坐标系 `frame=camera`；3D 预览翻 Y 与 RGB 同向。"
             "左侧 **抓取位姿** 框：`xyzrxryrz` 为 mm/°（对齐 Gen6D 摘取点格式），"
@@ -697,6 +701,7 @@ def build_sam3_genpose_tab() -> None:
                 rgb_shift_x,
                 rgb_shift_y,
                 enable_depth_align,
+                auto_align,
                 enable_workspace,
                 max_depth,
                 min_depth,
@@ -726,8 +731,9 @@ def build_sam3_genpose_tab() -> None:
             - **提示词**：可手写；或填「商品中文名」后点「生成提示词」/勾选「运行前由大模型生成」
             - **VLM**：界面可改 API URL / 模型名；`POST /v1/chat/completions`（传 RGB + 指令），默认见 `configs/conf.json` → `vlm`
             - **SAM3**：外部 HTTP `POST /infer`（`image_base64`），生成实例 mask
-            - **Depth→RGB 对齐**：默认开启。将 Depth warp 到 RGB 网格后再做 GenPose2 / 2D 叠加，消除横向偏差；`dx=-45` 表示历史 RGB 上色偏移，对齐时 Depth 使用 `+45`
-            - **camera.json**：可用 `depth_to_rgb_shift:[dx,dy]`（Depth 平移），或沿用 `rgb_shift:[dx,dy]`（按上色约定取反）
+            - **3D 点云**：灰色深度反投影，不上 RGB 色；位姿看坐标轴和青色 bbox
+            - **Depth→RGB 对齐**：给 SAM3 mask / GenPose2 用（像素对齐），不是为了给点云上色。默认自动估计 dx/dy
+            - **camera.json**：可用 `depth_to_rgb_shift:[dx,dy]`（Depth 平移）
             - **离群点剔除**：先 **全局**（深度范围+SOR），再 **按实例**（MAD+SOR），清洗后再送 GenPose2
             - **GenPose2**：ScoreNet → EnergyNet → ScaleNet，估计 6D 位姿与 3D 尺寸（无需 CAD）
             - **抓取位姿框**：`xyzrxryrz = [x,y,z,rx,ry,rz]`（mm / °，ZYX），含目标正方体 `size_3d` / `size_3d_mm` / `corners_mm`

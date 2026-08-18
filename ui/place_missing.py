@@ -24,7 +24,7 @@ from ui.pointcloud import (
     camera_pose_m_to_glb,
     create_pose_axes_mesh,
     create_pose_marker_sphere,
-    depth_rgb_to_pointcloud,
+    depth_to_pointcloud,
     export_scene_files,
 )
 from scripts.vlm_prompt import estimate_place_offset_from_image
@@ -640,7 +640,6 @@ def render_destination_overlay(
 def export_place_destination_glb(
     *,
     depth_mm: np.ndarray,
-    color_rgb: np.ndarray,
     intrinsic: np.ndarray,
     factor_depth: float,
     src_pose: np.ndarray,
@@ -652,10 +651,9 @@ def export_place_destination_glb(
     stem: str = "scene_place_dest",
     max_points: int = GRASP_CLOUD_MAX_POINTS,
 ) -> Dict[str, str]:
-    """Full shelf cloud + magenta moved instance + destination axes."""
-    points, colors, _ = depth_rgb_to_pointcloud(
+    """Full shelf cloud (gray) + magenta moved instance + destination axes."""
+    points, colors, _ = depth_to_pointcloud(
         depth_mm,
-        color_rgb,
         intrinsic,
         factor_depth=factor_depth,
         max_points=int(max_points) if max_points else GRASP_CLOUD_MAX_POINTS,
@@ -836,7 +834,6 @@ def run_place_missing_stage(
 
     files = export_place_destination_glb(
         depth_mm=depth_mm,
-        color_rgb=color_np,
         intrinsic=intrinsic,
         factor_depth=factor_depth,
         src_pose=src_pose,

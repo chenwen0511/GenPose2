@@ -1,4 +1,4 @@
-"""Gradio Tab 1: SAM3 分割 + 实例分色点云 GLB 预览."""
+"""Gradio Tab 1: SAM3 分割 + 灰色深度点云 GLB 预览."""
 
 from __future__ import annotations
 
@@ -29,11 +29,10 @@ from ui.common import (  # noqa: E402
     render_mask_bbox_previews,
     resolve_rgb_depth_alignment,
     shift_rgb_xy,
-    vis_colors_rgb,
 )
 from ui.pointcloud import (  # noqa: E402
     build_instance_id_map,
-    depth_instance_to_pointcloud,
+    depth_to_pointcloud,
     export_scene_files,
 )
 
@@ -79,6 +78,7 @@ def run_sam3_tab(
     rgb_shift_x: float = -45.0,
     rgb_shift_y: float = 0.0,
     enable_depth_align: bool = True,
+    auto_align: bool = True,
     enable_workspace_outlier: bool = True,
     max_depth_mm: float = 2500,
     min_depth_mm: float = 50,
@@ -115,7 +115,7 @@ def run_sam3_tab(
             ui_rgb_shift_x=float(rgb_shift_x or 0),
             ui_rgb_shift_y=float(rgb_shift_y or 0),
             enable_depth_align=bool(enable_depth_align),
-            auto_if_zero=False,
+            auto_align=bool(auto_align),
         )
         rgb_shift_meta = dict(align_meta.get("rgb_shift") or {})
         depth_align_meta = dict(align_meta.get("depth_align") or {})
@@ -193,11 +193,9 @@ def run_sam3_tab(
             if not np.any(id_map > 0):
                 return _error("离群点剔除后无有效实例点，请放宽参数", sensor_vis)
 
-        points, colors, pc_stats = depth_instance_to_pointcloud(
+        points, colors, pc_stats = depth_to_pointcloud(
             depth_mm,
-            id_map,
             intrinsic,
-            vis_colors_rgb(),
             factor_depth=factor_depth,
         )
         files = export_scene_files(points, colors, run_dir, stem="sam3_instances")
@@ -265,14 +263,18 @@ def build_sam3_tab() -> None:
                     label="对齐 Depth→RGB（推荐：修正像素/3D 偏差；默认开启）",
                     value=True,
                 )
+                auto_align = gr.Checkbox(
+                    label="自动估计 RGB↔Depth 偏移（边缘相关；默认开启，失败则回退手动 dx/dy）",
+                    value=True,
+                )
                 with gr.Row():
                     rgb_shift_x = gr.Number(
-                        label="RGB↔Depth 偏移 dx（默认 -45→Depth 右移 45）",
+                        label="手动 dx（自动关闭或估计失败时生效；历史上色约定 -45→Depth 右移 45）",
                         value=-45,
                         precision=0,
                     )
                     rgb_shift_y = gr.Number(
-                        label="RGB↔Depth 偏移 dy（+下）",
+                        label="手动 dy（+下）",
                         value=0,
                         precision=0,
                     )
@@ -338,9 +340,9 @@ def build_sam3_tab() -> None:
 
         gr.Markdown("### 3D 点云")
         gr.Markdown(
-            "> **灰色**=背景；**彩色**=各 SAM3 实例。"
-            "**数值坐标系 `frame=camera`（X右 Y下 Z前）**；"
-            "**3D 预览 `preview_frame=glb_y_up`（仅翻 Y）**。"
+            "> **灰色深度点云**（不上 RGB 色）。实例看上面的 2D mask / bbox。"
+            "数值坐标仍是相机系 `X右 Y下 Z前`。"
+            "导出 GLB 时只做 **Y 取反**（OpenCV 向下 → glTF/Three.js 向上）。"
         )
         with gr.Row():
             with gr.Column(scale=4):
@@ -366,6 +368,7 @@ def build_sam3_tab() -> None:
                 rgb_shift_x,
                 rgb_shift_y,
                 enable_depth_align,
+                auto_align,
                 enable_workspace,
                 max_depth,
                 min_depth,
@@ -382,8 +385,8 @@ def build_sam3_tab() -> None:
             f"""
             **说明**
             - 实例分割：SAM3 `POST /infer`（`image_base64`），默认 API `{cfg.get('api_url') or DEFAULT_SAM3_API_URL}`
-            - 点云：先 **全局** 深度/SOR 剔除，再按 **实例** 做 MAD+SOR，最后导出 GLB
-            - **Depth→RGB 对齐**默认开启；`dx=-45` 时 Depth 右移 45 对齐到 RGB（也可用 `camera.json` 的 `depth_to_rgb_shift` / `rgb_shift`）
+            - 点云：灰色深度反投影，不上 RGB / 实例色；先 **全局** 深度/SOR 剔除，再按 **实例** MAD+SOR
+            - **Depth→RGB 对齐**给 mask 用（不是给点云上色）；默认自动估计偏移
             - 配置见 `configs/conf.json`
             """
         )

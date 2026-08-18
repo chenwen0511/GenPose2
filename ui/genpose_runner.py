@@ -28,7 +28,7 @@ from ui.pointcloud import (  # noqa: E402
     create_oriented_bbox_mesh,
     create_pose_axes_mesh,
     create_pose_marker_sphere,
-    depth_rgb_to_pointcloud,
+    depth_to_pointcloud,
     export_scene_files,
 )
 
@@ -403,7 +403,6 @@ def build_poses_payload(
 def export_pose_scene(
     *,
     depth_mm: np.ndarray,
-    color_rgb: np.ndarray,
     intrinsic: np.ndarray,
     factor_depth: float,
     poses_np: np.ndarray,
@@ -413,9 +412,8 @@ def export_pose_scene(
     max_points: int = GRASP_CLOUD_MAX_POINTS,
     axis_length_m: float = 0.08,
 ) -> Dict[str, str]:
-    points, colors, _ = depth_rgb_to_pointcloud(
+    points, colors, _ = depth_to_pointcloud(
         depth_mm,
-        color_rgb,
         intrinsic,
         factor_depth=factor_depth,
         max_points=int(max_points) if max_points else GRASP_CLOUD_MAX_POINTS,

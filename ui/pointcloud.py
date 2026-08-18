@@ -11,6 +11,8 @@ from PIL import Image
 
 DEFAULT_MAX_POINTS = 80_000
 GRASP_CLOUD_MAX_POINTS = 80_000
+# Uniform preview color: no RGB texturing (avoids RGB–Depth coloring mismatch).
+CLOUD_GRAY_RGB = (168, 168, 176)
 # Match PEM_service / Gen6D: OpenCV (Y down) → GLB/Three.js (Y up). Only flip Y.
 CAMERA_TO_GLB = np.diag([1.0, -1.0, 1.0]).astype(np.float64)
 
@@ -439,6 +441,44 @@ def export_scene_glb(
         scene.add_geometry(geom)
     scene.export(output_path)
     return output_path
+
+
+def depth_to_pointcloud(
+    depth_mm: np.ndarray,
+    intrinsics: np.ndarray,
+    *,
+    factor_depth: float = 1000.0,
+    max_points: int = DEFAULT_MAX_POINTS,
+    gray: Sequence[int] = CLOUD_GRAY_RGB,
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, int]]:
+    """Back-project depth to GLB meters. Uniform gray — no RGB coloring."""
+    h, w = depth_mm.shape
+    k = np.asarray(intrinsics, dtype=np.float64)
+    fx, fy = float(k[0, 0]), float(k[1, 1])
+    cx, cy = float(k[0, 2]), float(k[1, 2])
+    u_coords, v_coords = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+    valid = depth_mm > 0
+    if not valid.any():
+        return (
+            np.empty((0, 3), dtype=np.float32),
+            np.empty((0, 3), dtype=np.uint8),
+            {"total": 0},
+        )
+
+    z = depth_mm[valid].astype(np.float32) / float(factor_depth)
+    x = (u_coords[valid] - cx) * z / fx
+    y = (v_coords[valid] - cy) * z / fy
+    points = np.stack([x, y, z], axis=-1)
+    points = camera_points_m_to_glb(points)
+
+    n = int(points.shape[0])
+    if n > max_points:
+        rng = np.random.default_rng(42)
+        idx = rng.choice(n, int(max_points), replace=False)
+        points = points[idx]
+        n = int(points.shape[0])
+    colors = np.tile(np.asarray(gray, dtype=np.uint8)[:3], (n, 1))
+    return points, colors, {"total": n}
 
 
 def depth_rgb_to_pointcloud(

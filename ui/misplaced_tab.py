@@ -304,6 +304,7 @@ def run_missing_pose_pipeline(
     rgb_shift_x: float,
     rgb_shift_y: float,
     enable_depth_align: bool,
+    auto_align: bool,
     enable_workspace_outlier: bool,
     max_depth_mm: float,
     min_depth_mm: float,
@@ -382,6 +383,7 @@ def run_missing_pose_pipeline(
             rgb_shift_x,
             rgb_shift_y,
             enable_depth_align,
+            auto_align,
             enable_workspace_outlier,
             max_depth_mm,
             min_depth_mm,
@@ -591,14 +593,18 @@ def build_misplaced_tab() -> None:
                     label="对齐 Depth→RGB（推荐：修正像素/3D 偏差；默认开启）",
                     value=True,
                 )
+                auto_align = gr.Checkbox(
+                    label="自动估计 RGB↔Depth 偏移（边缘相关；默认开启，失败则回退手动 dx/dy）",
+                    value=True,
+                )
                 with gr.Row():
                     rgb_shift_x = gr.Number(
-                        label="RGB↔Depth 偏移 dx（默认 -45→Depth 右移 45 对齐到 RGB）",
+                        label="手动 dx（自动关闭或估计失败时生效；历史上色约定 -45→Depth 右移 45）",
                         value=-45,
                         precision=0,
                     )
                     rgb_shift_y = gr.Number(
-                        label="RGB↔Depth 偏移 dy（+下）",
+                        label="手动 dy（+下）",
                         value=0,
                         precision=0,
                     )
@@ -882,6 +888,7 @@ def build_misplaced_tab() -> None:
                 rgb_shift_x,
                 rgb_shift_y,
                 enable_depth_align,
+                auto_align,
                 enable_workspace,
                 max_depth,
                 min_depth,
@@ -923,6 +930,6 @@ def build_misplaced_tab() -> None:
             - **全流程**：缺货名(M3) → SAM3 提示词(qwen) → SAM3 → GenPose2 → 放置位移(M3) → 目的 6D
             - **放置位移**会附带第①步「识别模型原始回复」作为空位上下文
             - **目的可视化**：2D 品红框/轴；另一份 GLB 中品红点云为平移后的实例
-            - **Depth→RGB 对齐**默认开启；产物在 `output/ui_runs/`（含 `place_destination.json`）
+            - **Depth→RGB 对齐**默认开启，并自动估计像素偏移；产物在 `output/ui_runs/`（含 `place_destination.json`）
             """
         )
