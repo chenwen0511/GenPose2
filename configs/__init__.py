@@ -1,4 +1,8 @@
-"""Load project external dependency config from ``configs/conf.json``."""
+"""Load project runtime config from ``configs/conf.json``.
+
+Training argparse lives in ``configs/config.py`` (``from configs.config import get_config``).
+UI / SAM3 / VLM / GenPose2 权重默认值走本模块。
+"""
 
 from __future__ import annotations
 
@@ -8,13 +12,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict
 
-# Python 包仍在 config/；JSON 配置在 configs/
-ROOT_DIR = Path(__file__).resolve().parents[1]
-CONFIGS_DIR = ROOT_DIR / "configs"
+ROOT_DIR = Path(__file__).resolve().parent.parent
+CONFIGS_DIR = Path(__file__).resolve().parent
 CONF_PATH = CONFIGS_DIR / "conf.json"
+CONF_EXAMPLE_PATH = CONFIGS_DIR / "conf.json.example"
 SECRETS_PATH = CONFIGS_DIR / "secrets.local.json"
-# 兼容旧路径 config/secrets.local.json
-_LEGACY_SECRETS = Path(__file__).resolve().parent / "secrets.local.json"
 
 
 def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -29,16 +31,23 @@ def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
 
 @lru_cache(maxsize=1)
 def load_conf(path: str | None = None) -> Dict[str, Any]:
-    conf_path = Path(path).expanduser().resolve() if path else CONF_PATH
+    if path:
+        conf_path = Path(path).expanduser().resolve()
+    elif CONF_PATH.is_file():
+        conf_path = CONF_PATH
+    elif CONF_EXAMPLE_PATH.is_file():
+        conf_path = CONF_EXAMPLE_PATH
+    else:
+        raise FileNotFoundError(
+            f"缺少 {CONF_PATH}（可从 {CONF_EXAMPLE_PATH.name} 复制一份）"
+        )
     with conf_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError(f"config must be a JSON object: {conf_path}")
-    # Optional local secrets (API keys); not committed
-    secrets_path = SECRETS_PATH if SECRETS_PATH.is_file() else _LEGACY_SECRETS
-    if secrets_path.is_file() and path is None:
+    if SECRETS_PATH.is_file() and path is None:
         try:
-            secrets = json.loads(secrets_path.read_text(encoding="utf-8"))
+            secrets = json.loads(SECRETS_PATH.read_text(encoding="utf-8"))
             if isinstance(secrets, dict):
                 data = _deep_merge(data, secrets)
         except Exception:  # noqa: BLE001
@@ -53,7 +62,6 @@ def get_sam3_conf() -> Dict[str, Any]:
 def get_vlm_conf() -> Dict[str, Any]:
     """Raw ``vlm`` section (may contain nested ``sam3_prompt`` / ``reason``)."""
     cfg = dict(load_conf().get("vlm") or {})
-    # Top-level key still honored (secrets.local.json → vlm.api_key)
     for env_key in ("ANTHROPIC_API_KEY", "MINIMAX_API_KEY", "VLM_API_KEY"):
         val = (os.environ.get(env_key) or "").strip()
         if val:
@@ -87,7 +95,6 @@ def get_vlm_profile(name: str = "reason") -> Dict[str, Any]:
     if isinstance(nested, dict) and nested:
         out = dict(nested)
     elif profile_key == "reason" and cfg.get("api_url"):
-        # Backward compat: flat vlm.{api_url,model,...}
         out = {
             k: cfg[k]
             for k in (
@@ -104,7 +111,6 @@ def get_vlm_profile(name: str = "reason") -> Dict[str, Any]:
     else:
         out = {}
 
-    # Inherit top-level api_key (from secrets / env)
     if not out.get("api_key") and cfg.get("api_key"):
         out["api_key"] = cfg["api_key"]
 
@@ -129,9 +135,7 @@ def get_vlm_profile(name: str = "reason") -> Dict[str, Any]:
         if model:
             out["model"] = model
         out.setdefault("provider", "openai")
-        out.setdefault(
-            "api_url", "http://192.168.130.88:8000/v1/chat/completions"
-        )
+        out.setdefault("api_url", "http://127.0.0.1:8000/v1/chat/completions")
         out.setdefault("model", "qwen3-vl-4b")
         out.setdefault("timeout_s", 60.0)
         out.setdefault("temperature", 0.1)
@@ -151,3 +155,28 @@ def resolve_repo_path(value: str) -> Path:
     else:
         path = path.resolve()
     return path
+
+
+def _ckpt_epoch_num(path: Path) -> int:
+    name = path.stem  # ckpt_epoch50
+    if name.startswith("ckpt_epoch"):
+        suffix = name[len("ckpt_epoch") :]
+        if suffix.isdigit():
+            return int(suffix)
+    return -1
+
+
+def resolve_ckpt_path(value: str) -> Path:
+    """Resolve a checkpoint file, or the latest ``ckpt_epoch*.pth`` inside a directory."""
+    path = resolve_repo_path(value)
+    if path.is_file():
+        return path
+    if path.is_dir():
+        epochs = sorted(path.glob("ckpt_epoch*.pth"), key=_ckpt_epoch_num)
+        if epochs:
+            return epochs[-1]
+        pths = sorted(path.glob("*.pth"), key=lambda p: p.stat().st_mtime)
+        if pths:
+            return pths[-1]
+        raise FileNotFoundError(f"checkpoint directory has no .pth: {path}")
+    raise FileNotFoundError(f"checkpoint not found: {path}")

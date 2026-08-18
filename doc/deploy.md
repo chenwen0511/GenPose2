@@ -447,7 +447,9 @@ python http_server.py --host 0.0.0.0 --port 8002 --seg-backend sam3
 |------|------|
 | `README.md` | 项目总览、Gradio UI、训练环境说明 |
 | `configs/conf.json.example` | UI / SAM3 / 双 VLM / GenPose2 权重模板（复制为本地 `configs/conf.json`） |
-| `configs/conf.json` | 本地运行配置（gitignore；含可选 `scale_mode` / `object_id`） |
+| `configs/conf.json` | 本地运行配置（gitignore）；ckpt 可为文件或目录 |
+| `configs/__init__.py` | 读取 `conf.json`（`from configs import get_sam3_conf, resolve_ckpt_path, ...`） |
+| `scripts/train/train_blender_v3_0818.sh` | blender_v3 微调：0815-stephen → 0818-stephen |
 | `learning/数据合成.md` | 合成代码迁至 `../data_factory_blender`；本仓库 `datasets/` 为输出目录 |
 | `learning/推理过程详解.md` | 离线推理与 HTTP 说明 |
 | `learning/料盘边缘场景训练.md` | 密排料盘 / 边缘点云从零重训练 |

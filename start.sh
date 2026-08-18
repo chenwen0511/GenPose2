@@ -196,8 +196,8 @@ print(f"  conf: {conf_path}")
 print("")
 for name, target, kind in rows:
     if kind == "local_file":
-        ok = Path(target).is_file()
-        status = "OK 文件存在" if ok else "MISSING 文件不存在"
+        ok = Path(target).is_file() or Path(target).is_dir()
+        status = "OK 存在" if ok else "MISSING 不存在"
         print(f"  [{kind}] {name}")
         print(f"           path : {target}")
         print(f"           check: {status}")

@@ -17,7 +17,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from config import get_sam3_conf  # noqa: E402
+from configs import get_sam3_conf  # noqa: E402
 from ui.common import (  # noqa: E402
     clean_instance_id_map,
     clean_workspace_mask,

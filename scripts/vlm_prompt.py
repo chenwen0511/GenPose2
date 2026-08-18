@@ -19,7 +19,7 @@ _ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(_ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(_ROOT_DIR))
 
-from config import get_vlm_conf, get_vlm_profile  # noqa: E402
+from configs import get_vlm_conf, get_vlm_profile  # noqa: E402
 
 logger = logging.getLogger("vlm_prompt")
 

@@ -21,7 +21,7 @@ if str(ROOT_DIR) not in sys.path:
 
 os.environ.setdefault("OPENCV_IO_ENABLE_OPENEXR", "1")
 
-from config import get_genpose2_conf, resolve_repo_path  # noqa: E402
+from configs import get_genpose2_conf, resolve_ckpt_path, resolve_repo_path  # noqa: E402
 from ui.pointcloud import (  # noqa: E402
     GRASP_CLOUD_MAX_POINTS,
     camera_pose_m_to_glb,
@@ -277,14 +277,11 @@ def resolve_ckpt_paths(
     scale_ckpt: Optional[str] = None,
 ) -> Tuple[Path, Path, Path]:
     cfg = get_genpose2_conf()
-    score = resolve_repo_path(score_ckpt or cfg.get("score_ckpt") or "results/ckpts/ScoreNet/scorenet.pth")
-    energy = resolve_repo_path(
+    score = resolve_ckpt_path(score_ckpt or cfg.get("score_ckpt") or "results/ckpts/ScoreNet/scorenet.pth")
+    energy = resolve_ckpt_path(
         energy_ckpt or cfg.get("energy_ckpt") or "results/ckpts/EnergyNet/energynet.pth"
     )
-    scale = resolve_repo_path(scale_ckpt or cfg.get("scale_ckpt") or "results/ckpts/ScaleNet/scalenet.pth")
-    for name, path in (("score", score), ("energy", energy), ("scale", scale)):
-        if not path.is_file():
-            raise FileNotFoundError(f"GenPose2 {name} checkpoint not found: {path}")
+    scale = resolve_ckpt_path(scale_ckpt or cfg.get("scale_ckpt") or "results/ckpts/ScaleNet/scalenet.pth")
     return score, energy, scale
 
 

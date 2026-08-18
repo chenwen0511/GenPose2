@@ -283,7 +283,8 @@ def main():
                 )
             ), 
             model_path=True, 
-            load_model_only=False
+            # 训练微调：只加载权重，从 epoch 0 再训；eval/pred 才恢复 clock/optimizer
+            load_model_only=bool(cfg.is_train and not cfg.eval and not cfg.pred),
         )
                 
         

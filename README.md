@@ -220,14 +220,18 @@ bash start.sh start|stop|restart|status
 # 日志: logs/ui.log
 ```
 
-配置：本地 `configs/conf.json`（gitignore；从 `configs/conf.json.example` 复制）。含 `sam3` API、双 VLM profile、`genpose2` 三网权重；可选 `scale_mode=metadata` + `object_id` 用 `obj_meta.json` 尺寸覆盖 ScaleNet。产物：`output/ui_runs/`（含 `grasp_pose.json`、`place_destination.json`）。
+配置：本地 `configs/conf.json`（gitignore；从 `configs/conf.json.example` 复制）。Python 从 `configs` 包读取（`from configs import get_genpose2_conf`），不再使用独立 `config/` 包。`genpose2.score_ckpt` / `energy_ckpt` / `scale_ckpt` 可以是 `.pth` 文件，也可以是目录（自动取最新 `ckpt_epoch*.pth`）。可选 `scale_mode=metadata` + `object_id` 用 `obj_meta.json` 尺寸覆盖 ScaleNet。产物：`output/ui_runs/`。
 
-**料盘冷启动训练**（Blender 合成数据默认 `datasets/train_set_blender_v2/SOPE`）：
+**料盘训练**
 
 ```bash
+# blender_v2 冷启动
 bash scripts/train/train_score_tray_0810.sh
 bash scripts/train/train_energy_tray_0810.sh
 bash scripts/train/train_scale_tray_0810.sh   # 可选
+
+# blender_v3 微调（0815-stephen → results/ckpts/0818-stephen）
+bash scripts/train/train_blender_v3_0818.sh
 ```
 
 **数据合成**已迁至并列工程 [`../data_factory_blender`](../data_factory_blender)（本仓库仅保留 `datasets/` 作为输出目录）。说明见 [`learning/数据合成.md`](learning/数据合成.md)；快捷转发：`scripts/synth/*.sh`。
